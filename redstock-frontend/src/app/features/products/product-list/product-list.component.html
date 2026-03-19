@@ -1,0 +1,44 @@
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="page-title text-2xl font-bold text-gray-900 tracking-tight">Catálogo Global</h1>
+      <p class="text-sm text-gray-400 mt-0.5">Gestión centralizada de productos de la organización</p>
+    </div>
+    <a routerLink="/products/new" class="py-2.5 px-6 bg-black text-white rounded-xl font-semibold hover:bg-gray-800 transition-all text-sm shadow-lg shadow-gray-200">
+      + Registrar Producto
+    </a>
+  </div>
+
+  @if (loading) {
+    <app-loading-spinner />
+  } @else if (products.length === 0) {
+    <app-empty-state icon="🧪" title="Sin productos" message="Aún no has registrado productos en el catálogo. Comienza creando uno nuevo." actionLabel="Registrar Producto" (action)="router.navigate(['/products/new'])" />
+  } @else {
+    <div class="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-gray-50/50 text-gray-400 font-bold uppercase tracking-widest text-[10px]">
+              <th class="px-8 py-4 text-left">Producto</th>
+              <th class="px-8 py-4 text-left">SKU / Código</th>
+              <th class="px-8 py-4 text-left">Descripción</th>
+              <th class="px-8 py-4 text-left">Registrado</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-50">
+            @for (p of products; track p.id) {
+              <tr class="hover:bg-gray-50/50 transition-colors">
+                <td class="px-8 py-4">
+                  <span class="font-bold text-gray-900">{{ p.name }}</span>
+                </td>
+                <td class="px-8 py-4 text-gray-300 font-mono text-[10px] font-bold uppercase tracking-wider">{{ p.sku }}</td>
+                <td class="px-8 py-4 text-gray-500 max-w-xs truncate">{{ p.description || '—' }}</td>
+                <td class="px-8 py-4 text-xs text-gray-400 font-medium">{{ p.created_at | date:'dd/MM/yyyy' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</div>

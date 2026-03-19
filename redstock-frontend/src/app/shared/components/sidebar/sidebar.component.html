@@ -1,0 +1,40 @@
+<aside class="bg-black text-white transition-all duration-300 flex flex-col z-30 shadow-2xl overflow-hidden"
+       [ngClass]="isCollapsed ? 'w-20' : 'w-72'">
+  
+  <div class="h-16 flex items-center px-6 border-b border-white/10 shrink-0">
+    <div class="w-8 h-8 rounded-lg bg-white text-black flex items-center justify-center font-bold shrink-0">R</div>
+    <span class="ml-3 font-bold text-lg tracking-tight transition-opacity duration-300"
+          [ngClass]="isCollapsed ? 'opacity-0 invisible' : 'opacity-100 visible'">RedStock</span>
+  </div>
+
+  <div class="flex-1 py-6 overflow-y-auto overflow-x-hidden">
+    <nav class="px-3 space-y-1">
+      @for (item of menuItems; track item.path) {
+        <a [routerLink]="item.path"
+           routerLinkActive="bg-white/10 text-white"
+           [routerLinkActiveOptions]="{ exact: item.path === '/dashboard' }"
+           class="flex items-center px-3 py-3 rounded-xl transition-all group hover:bg-white/5 relative">
+          <span class="text-xl shrink-0">{{ item.icon }}</span>
+          <span class="ml-4 font-medium text-sm transition-all duration-300"
+                [ngClass]="isCollapsed ? 'opacity-0 w-0' : 'opacity-80 group-hover:opacity-100'">
+            {{ item.label }}
+          </span>
+          <div *ngIf="isCollapsed" 
+               class="absolute left-16 bg-black text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 border border-white/10">
+            {{ item.label }}
+          </div>
+        </a>
+      }
+    </nav>
+  </div>
+
+  <div class="p-4 border-t border-white/10 shrink-0">
+    <div class="flex items-center px-2 py-3 bg-white/5 rounded-xl border border-white/5" [ngClass]="{'justify-center': isCollapsed}">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-gray-700 to-gray-500 shrink-0"></div>
+      <div class="ml-3 transition-opacity duration-300" [ngClass]="isCollapsed ? 'hidden' : 'block'">
+        <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Plan Actual</p>
+        <p class="text-xs font-semibold">Premium Enterprise</p>
+      </div>
+    </div>
+  </div>
+</aside>

@@ -1,0 +1,55 @@
+<div class="max-w-2xl mx-auto space-y-8">
+  <div class="text-center">
+    <div class="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-black text-white text-3xl mb-4 shadow-xl">✓</div>
+    <h1 class="page-title text-2xl font-bold text-gray-900 tracking-tight">Confirmar Recepción</h1>
+    <p class="text-sm text-gray-400 mt-1">Verifica los productos recibidos en el traslado #{{ transferId }}</p>
+  </div>
+
+  @if (loading) {
+    <app-loading-spinner />
+  } @else {
+    <div class="card p-8 bg-white border border-gray-100 rounded-3xl shadow-sm">
+      <div class="flex items-center justify-between mb-8 pb-4 border-b border-gray-50">
+        <div>
+           <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Sucursal Origen</p>
+           <p class="text-sm font-bold text-gray-900">{{ transfer?.origin_branch_name }}</p>
+        </div>
+        <div class="text-right">
+           <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Fecha Envío</p>
+           <p class="text-sm font-bold text-gray-900">{{ transfer?.requested_at | date:'dd/MM/yyyy' }}</p>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        @for (item of items; track item.id) {
+          <div class="p-6 bg-gray-50/50 rounded-2xl border border-gray-50 flex flex-col md:flex-row items-center gap-6">
+            <div class="flex-1">
+              <h4 class="font-bold text-gray-900">{{ item.product_name }}</h4>
+              <p class="text-[10px] text-gray-400 font-mono uppercase tracking-widest">Enviado: {{ item.requested_quantity }} unidades</p>
+            </div>
+            <div class="w-full md:w-40">
+              <label class="block text-[10px] font-bold text-gray-900 uppercase tracking-tighter mb-1">Recibido:</label>
+              <input type="number" 
+                     [(ngModel)]="item._receivedQty" 
+                     class="w-full px-4 py-2 bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-black outline-none transition-all text-sm font-black text-center"
+                     [class.text-red-600]="item._receivedQty < item.requested_quantity"
+                     [class.text-green-600]="item._receivedQty >= item.requested_quantity">
+            </div>
+          </div>
+        }
+      </div>
+
+       <div class="flex items-center gap-4 mt-10">
+         <button (click)="onConfirm()" 
+                 [disabled]="loadingConfirm" 
+                 class="flex-1 py-4 bg-black text-white rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-gray-800 disabled:opacity-50 transition-all">
+           {{ loadingConfirm ? 'Procesando...' : 'Confirmar Recepción' }}
+         </button>
+         <button (click)="router.navigate(['/transfers'])" 
+                 class="px-8 py-4 bg-white border border-gray-100 text-gray-900 rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-gray-50 transition-all">
+           Cancelar
+         </button>
+      </div>
+    </div>
+  }
+</div>

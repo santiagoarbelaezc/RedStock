@@ -1,0 +1,60 @@
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="page-title text-2xl font-bold text-gray-900 tracking-tight">Dashboard</h1>
+      <p class="text-sm text-gray-400 mt-0.5">Bienvenido de nuevo, {{ userName }}</p>
+    </div>
+    <app-color-picker />
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+    <app-stat-card title="Total productos" 
+                   [value]="stats.totalProducts" 
+                   icon="📦" 
+                   subtitle="En inventario global" />
+    <app-stat-card title="Con stock" 
+                   [value]="stats.inStock" 
+                   icon="✅" 
+                   subtitle="Disponibles para venta" />
+    <app-stat-card title="Traslados pendientes" 
+                   [value]="stats.pendingTransfers" 
+                   icon="🔄" 
+                   subtitle="Esperando aprobación" />
+    <app-stat-card title="Ventas del mes" 
+                   [value]="stats.monthRevenue | currency:'USD':'symbol':'1.0-0'" 
+                   icon="💰" 
+                   subtitle="Ingresos brutos" />
+  </div>
+
+  <div class="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
+    <div class="flex items-center justify-between px-8 py-6 border-b border-gray-50">
+      <h2 class="text-sm font-bold text-gray-900 uppercase tracking-widest">Traslados recientes</h2>
+      <a routerLink="/transfers" class="text-xs font-bold text-black border-b-2 border-black hover:pb-1 transition-all">Ver todos</a>
+    </div>
+
+    @if (loading) {
+      <app-loading-spinner />
+    } @else {
+      <div class="divide-y divide-gray-50">
+        @for (t of recentTransfers; track t.id) {
+          <div class="flex items-center justify-between px-8 py-4 hover:bg-gray-50 transition-colors">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-lg">
+                🚚
+              </div>
+              <div>
+                <p class="text-sm font-bold text-gray-900">{{ t.origin_branch_name }} → {{ t.destination_branch_name }}</p>
+                <p class="text-[10px] text-gray-400 font-medium">{{ t.requested_at | date:'dd/MM/yyyy HH:mm' }}</p>
+              </div>
+            </div>
+            <app-badge-status [status]="t.status" />
+          </div>
+        } @empty {
+          <div class="px-8 py-12 text-center">
+            <p class="text-sm text-gray-400 font-medium italic">No hay traslados recientes para mostrar</p>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

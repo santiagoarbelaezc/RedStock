@@ -1,0 +1,73 @@
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="page-title text-2xl font-bold text-gray-900 tracking-tight">Inventario</h1>
+      <p class="text-sm text-gray-400 mt-0.5">Control de stock por sucursal</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <select class="w-64 px-4 py-2 bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-black outline-none transition-all text-sm font-medium shadow-sm" 
+              [(ngModel)]="selectedBranchId" 
+              (change)="loadInventory()">
+        <option value="">Todas las sucursales</option>
+        @for (b of branches; track b.id) {
+          <option [value]="b.id">{{ b.name }}</option>
+        }
+      </select>
+      <a routerLink="/transfers/new" class="py-2.5 px-6 bg-black text-white rounded-xl font-semibold hover:bg-gray-800 transition-all text-sm">
+        + Solicitar traslado
+      </a>
+    </div>
+  </div>
+
+  @if (loading) {
+    <app-loading-spinner />
+  } @else if (inventory.length === 0) {
+    <app-empty-state icon="📦" title="Sin inventario" message="No hay productos registrados en esta sucursal aún." />
+  } @else {
+    <div class="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-gray-50/50 text-gray-400 font-bold uppercase tracking-widest text-[10px]">
+              <th class="px-8 py-4 text-left">Producto</th>
+              <th class="px-8 py-4 text-left">SKU</th>
+              <th class="px-8 py-4 text-left">Sucursal</th>
+              <th class="px-8 py-4 text-center">Stock</th>
+              <th class="px-8 py-4 text-left">Actualizado</th>
+              <th class="px-8 py-4"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-50">
+            @for (item of inventory; track item.id) {
+              <tr class="hover:bg-gray-50/50 transition-colors group">
+                <td class="px-8 py-4">
+                  <span class="font-bold text-gray-900">{{ item.product_name }}</span>
+                </td>
+                <td class="px-8 py-4 text-gray-400 font-mono text-xs">{{ item.sku }}</td>
+                <td class="px-8 py-4 text-gray-500 font-medium">{{ item.branch_name || 'Mi sucursal' }}</td>
+                <td class="px-8 py-4 text-center">
+                  <div class="inline-flex flex-col items-center">
+                    <span class="font-bold text-base" [ngClass]="item.quantity <= 5 ? 'text-red-600' : 'text-gray-900'">
+                      {{ item.quantity }}
+                    </span>
+                    @if (item.quantity <= 5) {
+                      <span class="text-[8px] font-black text-red-500 uppercase tracking-tighter">Stock Crítico</span>
+                    }
+                  </div>
+                </td>
+                <td class="px-8 py-4 text-xs text-gray-400 font-medium">{{ item.updated_at | date:'dd/MM/yy HH:mm' }}</td>
+                <td class="px-8 py-4 text-right">
+                  @if (item.branch_id !== myBranchId) {
+                    <a routerLink="/transfers/new" class="opacity-0 group-hover:opacity-100 transition-opacity px-4 py-1.5 bg-gray-900 text-white rounded-lg text-[10px] font-bold uppercase tracking-wider">
+                      Solicitar
+                    </a>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</div>

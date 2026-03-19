@@ -1,0 +1,47 @@
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="page-title text-2xl font-bold text-gray-900 tracking-tight">Sucursales</h1>
+      <p class="text-sm text-gray-400 mt-0.5">Gestión de puntos de venta de la organización</p>
+    </div>
+    <a routerLink="/branches/new" class="py-2.5 px-6 bg-black text-white rounded-xl font-semibold hover:bg-gray-800 transition-all text-sm shadow-lg shadow-gray-200">
+      + Nueva sucursal
+    </a>
+  </div>
+
+  @if (loading) {
+    <app-loading-spinner />
+  } @else {
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      @for (b of branches; track b.id) {
+        <div class="card p-8 bg-white border border-gray-100 rounded-3xl hover:shadow-md transition-all duration-300 group relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-gray-50 rounded-full -mr-16 -mt-16 group-hover:bg-black/5 transition-colors"></div>
+          
+          <div class="relative">
+            <div class="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-xl mb-6 shadow-inner">🏠</div>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">{{ b.name }}</h3>
+            <div class="space-y-2 mb-8">
+              <div class="flex items-center gap-2 text-sm text-gray-500">
+                <span class="opacity-50 text-[10px]">📍</span> <span>{{ b.address }}</span>
+              </div>
+              <div class="flex items-center gap-2 text-sm text-gray-500">
+                <span class="opacity-50 text-[10px]">📞</span> <span>{{ b.phone || 'Sin teléfono' }}</span>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-3 pt-6 border-t border-gray-50 mt-auto">
+              <a [routerLink]="['/branches', b.id, 'edit']" 
+                 class="flex-1 py-2 text-center bg-gray-50 text-gray-900 text-[10px] font-bold uppercase tracking-widest rounded-xl hover:bg-gray-100 transition-all">
+                Editar
+              </a>
+              <a [routerLink]="['/inventory/branch', b.id]" 
+                 class="flex-1 py-2 text-center bg-black text-white text-[10px] font-bold uppercase tracking-widest rounded-xl hover:bg-gray-800 transition-all shadow-sm">
+                Inventario
+              </a>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

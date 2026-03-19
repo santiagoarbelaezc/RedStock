@@ -1,0 +1,47 @@
+<div class="max-w-2xl mx-auto space-y-8">
+  <div class="text-center">
+    <div class="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-gray-50 text-gray-900 text-3xl mb-4 shadow-inner">📦</div>
+    <h1 class="page-title text-2xl font-bold text-gray-900 tracking-tight">Nuevo Producto</h1>
+    <p class="text-sm text-gray-400 mt-1">Registra un nuevo artículo en el catálogo central</p>
+  </div>
+
+  <form (ngSubmit)="onSubmit()" class="card p-10 bg-white border border-gray-100 rounded-[40px] shadow-sm space-y-8">
+    <div class="space-y-6">
+      <div>
+        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Nombre descriptivo</label>
+        <input [(ngModel)]="name" name="name" type="text" 
+               class="w-full px-6 py-4 bg-gray-50 border border-gray-50 rounded-2xl focus:ring-2 focus:ring-black outline-none transition-all text-sm font-bold shadow-inner" 
+               placeholder="Ej: Camiseta Básica Premium">
+      </div>
+      <div>
+        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">SKU / Código Referencia</label>
+        <input [(ngModel)]="sku" name="sku" type="text" 
+               class="w-full px-6 py-4 bg-gray-50 border border-gray-50 rounded-2xl focus:ring-2 focus:ring-black outline-none transition-all text-[10px] font-mono font-bold uppercase tracking-wider shadow-inner" 
+               placeholder="ABC-123-XY">
+      </div>
+      <div>
+        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Descripción técnica</label>
+        <textarea [(ngModel)]="description" name="description" 
+                  class="w-full px-6 py-4 bg-gray-50 border border-gray-50 rounded-2xl focus:ring-2 focus:ring-black outline-none transition-all text-sm font-medium min-h-[120px] shadow-inner" 
+                  placeholder="Detalles del producto..."></textarea>
+      </div>
+    </div>
+
+    <div *ngIf="error" class="bg-red-50 text-red-600 p-4 rounded-2xl text-xs font-bold text-center border border-red-100 italic">
+       {{ error }}
+    </div>
+
+    <div class="flex items-center gap-4 pt-4">
+      <button type="submit" 
+              [disabled]="loading || !name || !sku" 
+              class="flex-1 py-4 bg-black text-white rounded-[20px] font-bold text-sm uppercase tracking-widest hover:bg-gray-800 disabled:opacity-50 transition-all shadow-xl shadow-gray-200">
+        {{ loading ? 'Registrando...' : 'Registrar Producto' }}
+      </button>
+      <button type="button" 
+              (click)="router.navigate(['/products'])" 
+              class="px-8 py-4 bg-white border border-gray-100 text-gray-900 rounded-[20px] font-bold text-sm uppercase tracking-widest hover:bg-gray-50 transition-all">
+        Cancelar
+      </button>
+    </div>
+  </form>
+</div>

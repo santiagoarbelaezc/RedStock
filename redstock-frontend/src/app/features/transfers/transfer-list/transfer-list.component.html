@@ -1,0 +1,55 @@
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="page-title text-2xl font-bold text-gray-900 tracking-tight">Traslados</h1>
+      <p class="text-sm text-gray-400 mt-0.5">Solicitudes de movimiento entre sucursales</p>
+    </div>
+    <a routerLink="/transfers/new" class="py-2.5 px-6 bg-black text-white rounded-xl font-semibold hover:bg-gray-800 transition-all text-sm shadow-lg shadow-gray-200">
+      + Nuevo traslado
+    </a>
+  </div>
+
+  @if (loading) {
+    <app-loading-spinner />
+  } @else if (transfers.length === 0) {
+    <app-empty-state icon="🔄" title="Sin traslados" message="No hay traslados registrados para tu sucursal." />
+  } @else {
+    <div class="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-gray-50/50 text-gray-400 font-bold uppercase tracking-widest text-[10px]">
+              <th class="px-8 py-4 text-left">Referencia</th>
+              <th class="px-8 py-4 text-left">Origen</th>
+              <th class="px-8 py-4 text-left">Destino</th>
+              <th class="px-8 py-4 text-left">Estado</th>
+              <th class="px-8 py-4 text-left">Solicitado en</th>
+              <th class="px-8 py-4"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-50">
+            @for (t of transfers; track t.id) {
+              <tr class="hover:bg-gray-50/50 transition-colors group">
+                <td class="px-8 py-4 font-mono text-[10px] font-bold text-gray-300">#{{ t.id }}</td>
+                <td class="px-8 py-4">
+                  <span class="font-bold text-gray-900">{{ t.origin_branch_name }}</span>
+                </td>
+                <td class="px-8 py-4 font-medium text-gray-500">{{ t.destination_branch_name }}</td>
+                <td class="px-8 py-4"><app-badge-status [status]="t.status" /></td>
+                <td class="px-8 py-4 text-xs text-gray-400 font-medium">{{ t.requested_at | date:'dd/MM/yy HH:mm' }}</td>
+                <td class="px-8 py-4 text-right">
+                  @if (t.status === 'IN_TRANSIT' && t.destination_branch_id === myBranchId) {
+                    <a [routerLink]="['/transfers', t.id, 'confirm']"
+                       class="px-4 py-1.5 bg-[var(--accent-color)] text-white rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-black transition-colors">
+                      Confirmar
+                    </a>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</div>

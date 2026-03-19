@@ -1,8 +1,11 @@
 <div class="space-y-6">
   <div class="flex items-center justify-between">
-    <div>
-      <h1 class="page-title text-2xl font-bold text-gray-900 tracking-tight">Sucursales</h1>
-      <p class="text-sm text-gray-400 mt-0.5">Gestión de puntos de venta de la organización</p>
+    <div class="flex items-center gap-4">
+      <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600" [innerHTML]="icons.branches | safeHtml"></div>
+      <div>
+        <h1 class="page-title text-2xl font-bold text-gray-900 tracking-tight">Sucursales</h1>
+        <p class="text-sm text-gray-400 mt-0.5">Gestión de puntos de venta de la organización</p>
+      </div>
     </div>
     <a routerLink="/branches/new" class="py-2.5 px-6 bg-black text-white rounded-xl font-semibold hover:bg-gray-800 transition-all text-sm shadow-lg shadow-gray-200">
       + Nueva sucursal

@@ -16,6 +16,7 @@ const create = async (req, res, next) => {
     }
 
     const transfer = await TransferModel.create(originBranchId, destinationBranchId);
+    console.log(`[TRANSFER] Nueva solicitud de traslado: Origen ${originBranchId} -> Destino ${destinationBranchId} (por ${req.user.email})`);
 
     // Crear ítems del traslado
     const createdItems = [];
@@ -26,6 +27,7 @@ const create = async (req, res, next) => {
 
     return successResponse(res, { ...transfer, items: createdItems }, 'Traslado solicitado', 201);
   } catch (err) {
+    console.error(`[TRANSFER] Error creando traslado: ${err.message}`);
     next(err);
   }
 };
@@ -56,9 +58,12 @@ const updateStatus = async (req, res, next) => {
 
     const receivedAt = ['RECEIVED', 'PARTIAL'].includes(status) ? new Date() : null;
     const updated = await TransferModel.updateStatus(transferId, status, receivedAt);
+    
+    console.log(`[TRANSFER] Estado actualizado: ID ${transferId} -> ${status} (por ${req.user.email})`);
 
     return successResponse(res, updated, 'Estado actualizado');
   } catch (err) {
+    console.error(`[TRANSFER] Error actualizando estado: ${err.message}`);
     next(err);
   }
 };
@@ -88,8 +93,11 @@ const confirmReception = async (req, res, next) => {
     const newStatus = hasPartial ? 'PARTIAL' : 'RECEIVED';
     await TransferModel.updateStatus(transferId, newStatus, new Date());
 
+    console.log(`[TRANSFER] Recepción confirmada: ID ${transferId} -> Finalizado como ${newStatus} (por ${req.user.email})`);
+
     return successResponse(res, { status: newStatus, items: confirmedItems }, 'Recepción confirmada');
   } catch (err) {
+    console.error(`[TRANSFER] Error confirmando recepción: ${err.message}`);
     next(err);
   }
 };

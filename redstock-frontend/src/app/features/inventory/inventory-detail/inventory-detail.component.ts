@@ -44,7 +44,7 @@ export class InventoryDetailComponent implements OnInit {
 
   updateQty(item: any) {
     if (item._newQty === undefined || item._newQty === item.quantity) return;
-    this.inventoryService.updateQuantity(item.id, item._newQty).subscribe({
+    this.inventoryService.updateQuantity(this.branchId, item.id, item._newQty).subscribe({
       next: () => {
         item.quantity = item._newQty;
       }

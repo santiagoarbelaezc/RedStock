@@ -1,21 +1,21 @@
 <aside class="bg-black text-white transition-all duration-300 flex flex-col z-30 shadow-2xl overflow-hidden"
-       [ngClass]="isCollapsed ? 'w-20' : 'w-72'">
+       [ngClass]="isCollapsed ? 'w-20' : 'w-52'">
   
-  <div class="h-16 flex items-center px-6 border-b border-white/10 shrink-0">
+  <div class="h-16 flex items-center px-4 border-b border-white/10 shrink-0">
     <div class="w-8 h-8 rounded-lg bg-white text-black flex items-center justify-center font-bold shrink-0">R</div>
     <span class="ml-3 font-bold text-lg tracking-tight transition-opacity duration-300"
           [ngClass]="isCollapsed ? 'opacity-0 invisible' : 'opacity-100 visible'">RedStock</span>
   </div>
 
   <div class="flex-1 py-6 overflow-y-auto overflow-x-hidden">
-    <nav class="px-3 space-y-1">
+    <nav class="px-2 space-y-1">
       @for (item of menuItems; track item.path) {
         <a [routerLink]="item.path"
            routerLinkActive="bg-white/10 text-white"
            [routerLinkActiveOptions]="{ exact: item.path === '/dashboard' }"
            class="flex items-center px-3 py-3 rounded-xl transition-all group hover:bg-white/5 relative">
-          <span class="text-xl shrink-0">{{ item.icon }}</span>
-          <span class="ml-4 font-medium text-sm transition-all duration-300"
+          <div class="shrink-0" [innerHTML]="item.icon | safeHtml"></div>
+          <span class="ml-3 font-medium text-sm transition-all duration-300"
                 [ngClass]="isCollapsed ? 'opacity-0 w-0' : 'opacity-80 group-hover:opacity-100'">
             {{ item.label }}
           </span>

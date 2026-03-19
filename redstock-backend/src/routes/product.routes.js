@@ -1,24 +1,24 @@
 const { Router } = require('express');
 const router = Router();
-const { getAll, getById, create, update, remove } = require('../controllers/branch.controller');
+const { getAll, getById, create, update, remove } = require('../controllers/product.controller');
 const { verifyToken, checkRole } = require('../middlewares/auth.middleware');
 
 const adminOnly = ['admin'];
 const adminOrManager = ['admin', 'manager'];
 
-// GET  /api/branches
+// GET  /api/products
 router.get('/', verifyToken, getAll);
 
-// GET  /api/branches/:id
+// GET  /api/products/:id
 router.get('/:id', verifyToken, getById);
 
-// POST /api/branches
+// POST /api/products
 router.post('/', verifyToken, checkRole(adminOnly), create);
 
-// PUT  /api/branches/:id
+// PUT  /api/products/:id
 router.put('/:id', verifyToken, checkRole(adminOrManager), update);
 
-// DELETE /api/branches/:id
+// DELETE /api/products/:id
 router.delete('/:id', verifyToken, checkRole(adminOnly), remove);
 
 module.exports = router;

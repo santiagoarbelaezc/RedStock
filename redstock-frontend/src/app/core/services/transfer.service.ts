@@ -20,4 +20,8 @@ export class TransferService {
   confirmReception(transferId: number, items: any[]): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/${transferId}/confirm`, { items });
   }
+
+  updateStatus(transferId: number, status: string): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/${transferId}/status`, { status });
+  }
 }

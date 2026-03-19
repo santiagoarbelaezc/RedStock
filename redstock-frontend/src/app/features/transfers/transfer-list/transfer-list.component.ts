@@ -6,17 +6,20 @@ import { AuthService } from '../../../core/services/auth.service';
 import { BadgeStatusComponent } from '../../../shared/components/badge-status/badge-status.component';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
+import { ICONS } from '../../../shared/constants/icons.constant';
+import { SafeHtmlPipe } from '../../../shared/pipes/safe-html.pipe';
 
 @Component({
   selector: 'app-transfer-list',
   standalone: true,
-  imports: [RouterLink, NgFor, DatePipe, BadgeStatusComponent, LoadingSpinnerComponent, EmptyStateComponent],
+  imports: [RouterLink, NgFor, DatePipe, BadgeStatusComponent, LoadingSpinnerComponent, EmptyStateComponent, SafeHtmlPipe],
   templateUrl: './transfer-list.component.html',
   styleUrl: './transfer-list.component.css'
 })
 export class TransferListComponent implements OnInit {
   transfers: any[] = [];
   loading = true;
+  protected icons = ICONS;
 
   get myBranchId() { 
     const u = this.auth.getCurrentUser();

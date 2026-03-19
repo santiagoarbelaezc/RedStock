@@ -1,7 +1,11 @@
 <div class="card p-6 flex flex-col h-full bg-white border border-gray-100 rounded-2xl hover:shadow-md transition-all duration-300">
   <div class="flex items-center justify-between mb-4">
     <div class="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-xl shadow-inner">
-      {{ icon }}
+      @if (isSvgIcon) {
+        <div class="w-6 h-6 text-gray-900" [innerHTML]="icon | safeHtml"></div>
+      } @else {
+        <span>{{ icon }}</span>
+      }
     </div>
     @if (change !== undefined) {
       <div class="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold"

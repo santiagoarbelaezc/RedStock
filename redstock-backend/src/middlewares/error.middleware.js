@@ -1,8 +1,11 @@
 const errorHandler = (err, req, res, next) => {
-  console.error(`[ERROR] ${err.message}`);
-  console.error(err.stack);
-
   const status = err.status || err.statusCode || 500;
+  const timestamp = new Date().toISOString();
+
+  console.error(`[${timestamp}] [ERROR] ${req.method} ${req.originalUrl} - ${err.message}`);
+  if (status >= 500) {
+    console.error(err.stack);
+  }
   const message = err.message || 'Error interno del servidor';
 
   res.status(status).json({

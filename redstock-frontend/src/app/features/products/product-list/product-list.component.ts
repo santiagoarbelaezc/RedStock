@@ -5,17 +5,20 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
+import { ICONS } from '../../../shared/constants/icons.constant';
+import { SafeHtmlPipe } from '../../../shared/pipes/safe-html.pipe';
 
 @Component({
   selector: 'app-product-list',
   standalone: true,
-  imports: [RouterLink, NgFor, DatePipe, LoadingSpinnerComponent, EmptyStateComponent],
+  imports: [RouterLink, NgFor, DatePipe, LoadingSpinnerComponent, EmptyStateComponent, SafeHtmlPipe],
   templateUrl: './product-list.component.html',
   styleUrl: './product-list.component.css'
 })
 export class ProductListComponent implements OnInit {
   products: any[] = [];
   loading = true;
+  protected icons = ICONS;
 
   constructor(private http: HttpClient, public router: Router) {}
 

@@ -12,11 +12,23 @@ export class NavbarComponent {
 
   constructor(private auth: AuthService) {}
 
-  get userName() { return this.auth.getCurrentUser()?.name || 'Usuario'; }
-  get userEmail() { return this.auth.getCurrentUser()?.email || ''; }
-  get branchName() { return this.auth.getCurrentUser()?.branchName || 'Sucursal Principal'; }
+  get userName() { 
+    return this.auth.getCurrentUser()?.name || 'Usuario'; 
+  }
+  
+  get userEmail() { 
+    return this.auth.getCurrentUser()?.email || ''; 
+  }
+  
+  get branchName() { 
+    const user = this.auth.getCurrentUser();
+    if (!user) return 'Sucursal Principal';
+    return user.branch_name || user.branchName || 'Sucursal Principal'; 
+  }
+  
   get userInitials() { 
-    return this.userName.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2); 
+    const name = this.auth.getCurrentUser()?.name || 'U';
+    return name.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2); 
   }
 
   logout() {

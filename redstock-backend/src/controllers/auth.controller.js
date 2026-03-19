@@ -16,9 +16,11 @@ const register = async (req, res, next) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await UserModel.create(name, email, hashedPassword, role, branchId);
+    console.log(`[AUTH] Nuevo usuario registrado: ${email} [${user.role}]`);
 
     return successResponse(res, user, 'Usuario registrado exitosamente', 201);
   } catch (err) {
+    console.error(`[AUTH] Error en registro: ${err.message}`);
     next(err);
   }
 };
@@ -32,16 +34,24 @@ const login = async (req, res, next) => {
     }
 
     const user = await UserModel.getByEmail(email);
-    if (!user) return errorResponse(res, 'Credenciales inválidas', 401);
+    if (!user) {
+      console.warn(`[AUTH] Intento de login fallido - Email no encontrado: ${email}`);
+      return errorResponse(res, 'Credenciales inválidas', 401);
+    }
 
     const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) return errorResponse(res, 'Credenciales inválidas', 401);
+    if (!validPassword) {
+      console.warn(`[AUTH] Intento de login fallido - Password incorrecto: ${email}`);
+      return errorResponse(res, 'Credenciales inválidas', 401);
+    }
 
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role, branchId: user.branch_id },
       process.env.JWT_SECRET,
       { expiresIn: '8h' }
     );
+
+    console.log(`[AUTH] Login exitoso: ${email} [${user.role}]`);
 
     return successResponse(res, {
       token,

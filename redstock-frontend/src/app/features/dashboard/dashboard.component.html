@@ -10,19 +10,19 @@
   <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
     <app-stat-card title="Total productos" 
                    [value]="stats.totalProducts" 
-                   icon="📦" 
+                   [icon]="icons.inventory" 
                    subtitle="En inventario global" />
     <app-stat-card title="Con stock" 
                    [value]="stats.inStock" 
-                   icon="✅" 
+                   [icon]="icons.products" 
                    subtitle="Disponibles para venta" />
     <app-stat-card title="Traslados pendientes" 
                    [value]="stats.pendingTransfers" 
-                   icon="🔄" 
+                   [icon]="icons.transfers" 
                    subtitle="Esperando aprobación" />
     <app-stat-card title="Ventas del mes" 
-                   [value]="stats.monthRevenue | currency:'USD':'symbol':'1.0-0'" 
-                   icon="💰" 
+                   [value]="(stats.monthRevenue | currency:'USD':'symbol':'1.0-0')!" 
+                   [icon]="icons.analytics" 
                    subtitle="Ingresos brutos" />
   </div>
 

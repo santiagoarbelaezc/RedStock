@@ -5,14 +5,16 @@ import { FormsModule } from '@angular/forms';
 import { InventoryService } from '../../../core/services/inventory.service';
 import { BranchService } from '../../../core/services/branch.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { ICONS } from '../../../shared/constants/icons.constant';
 import { BadgeStatusComponent } from '../../../shared/components/badge-status/badge-status.component';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
+import { SafeHtmlPipe } from '../../../shared/pipes/safe-html.pipe';
 
 @Component({
   selector: 'app-inventory-list',
   standalone: true,
-  imports: [RouterLink, NgFor, NgClass, DecimalPipe, DatePipe, FormsModule, BadgeStatusComponent, LoadingSpinnerComponent, EmptyStateComponent],
+  imports: [RouterLink, NgFor, NgClass, DecimalPipe, DatePipe, FormsModule, BadgeStatusComponent, LoadingSpinnerComponent, EmptyStateComponent, SafeHtmlPipe],
   templateUrl: './inventory-list.component.html',
   styleUrl: './inventory-list.component.css'
 })
@@ -21,6 +23,7 @@ export class InventoryListComponent implements OnInit {
   branches: any[] = [];
   selectedBranchId: number | string = '';
   loading = true;
+  protected icons = ICONS;
 
   get myBranchId() { 
     const u = this.auth.getCurrentUser();

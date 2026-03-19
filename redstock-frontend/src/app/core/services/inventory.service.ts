@@ -17,7 +17,7 @@ export class InventoryService {
     return this.http.get<any>(this.apiUrl);
   }
 
-  updateQuantity(inventoryId: number, quantity: number): Observable<any> {
-    return this.http.patch<any>(`${this.apiUrl}/${inventoryId}/quantity`, { quantity });
+  updateQuantity(branchId: number, productId: number, quantity: number): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/${branchId}/${productId}`, { quantity });
   }
 }

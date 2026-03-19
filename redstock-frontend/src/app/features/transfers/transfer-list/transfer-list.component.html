@@ -1,8 +1,11 @@
 <div class="space-y-6">
   <div class="flex items-center justify-between">
-    <div>
-      <h1 class="page-title text-2xl font-bold text-gray-900 tracking-tight">Traslados</h1>
-      <p class="text-sm text-gray-400 mt-0.5">Solicitudes de movimiento entre sucursales</p>
+    <div class="flex items-center gap-4">
+      <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center text-orange-600" [innerHTML]="icons.transfers | safeHtml"></div>
+      <div>
+        <h1 class="page-title text-2xl font-bold text-gray-900 tracking-tight">Traslados</h1>
+        <p class="text-sm text-gray-400 mt-0.5">Solicitudes de movimiento entre sucursales</p>
+      </div>
     </div>
     <a routerLink="/transfers/new" class="py-2.5 px-6 bg-black text-white rounded-xl font-semibold hover:bg-gray-800 transition-all text-sm shadow-lg shadow-gray-200">
       + Nuevo traslado

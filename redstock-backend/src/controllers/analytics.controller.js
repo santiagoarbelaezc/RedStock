@@ -17,7 +17,7 @@ const currentMonthSales = async (req, res, next) => {
       month: now.getMonth() + 1,
       totalRevenue,
       totalUnits,
-      transactions: sales.length,
+      totalTransactions: sales.length,
       sales,
     }, 'Ventas del mes actual');
   } catch (err) {

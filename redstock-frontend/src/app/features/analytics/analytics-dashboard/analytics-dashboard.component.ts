@@ -6,17 +6,22 @@ import { AnalyticsService } from '../../../core/services/analytics.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
 import { StatCardComponent } from '../../../shared/components/stat-card/stat-card.component';
+import { ICONS } from '../../../shared/constants/icons.constant';
+import { SafeHtmlPipe } from '../../../shared/pipes/safe-html.pipe';
 
 @Component({
   selector: 'app-analytics-dashboard',
   standalone: true,
-  imports: [NgFor, NgIf, DecimalPipe, CurrencyPipe, DatePipe, BaseChartDirective, LoadingSpinnerComponent, StatCardComponent],
+  imports: [NgFor, NgIf, DecimalPipe, CurrencyPipe, DatePipe, BaseChartDirective, LoadingSpinnerComponent, StatCardComponent, SafeHtmlPipe],
   template: `
 <div class="space-y-6">
   <div class="flex items-center justify-between">
-    <div>
-      <h1 class="page-title text-2xl font-bold text-gray-900 tracking-tight">Analíticas</h1>
-      <p class="text-sm text-gray-400 mt-0.5">Rendimiento de ventas e inventario</p>
+    <div class="flex items-center gap-4">
+      <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center text-green-600" [innerHTML]="icons.analytics | safeHtml"></div>
+      <div>
+        <h1 class="page-title text-2xl font-bold text-gray-900 tracking-tight">Analíticas</h1>
+        <p class="text-sm text-gray-400 mt-0.5">Rendimiento de ventas e inventario</p>
+      </div>
     </div>
     <div class="text-right">
        <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Última actualización</p>
@@ -28,9 +33,9 @@ import { StatCardComponent } from '../../../shared/components/stat-card/stat-car
     <app-loading-spinner />
   } @else {
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <app-stat-card title="Ingresos" [value]="(stats.currentMonthSales | currency:'USD':'symbol':'1.0-0')!" icon="📈" subtitle="Mes actual" />
-      <app-stat-card title="Unidades" [value]="stats.currentMonthUnits" icon="📦" subtitle="Volumen físico" />
-      <app-stat-card title="Ventas" [value]="stats.currentMonthTransactions" icon="🧾" subtitle="Transacciones" />
+      <app-stat-card title="Ingresos" [value]="(stats.currentMonthSales | currency:'USD':'symbol':'1.0-0')!" [icon]="icons.analytics" subtitle="Mes actual" />
+      <app-stat-card title="Unidades" [value]="stats.currentMonthUnits" [icon]="icons.inventory" subtitle="Volumen físico" />
+      <app-stat-card title="Ventas" [value]="stats.currentMonthTransactions" [icon]="icons.transfers" subtitle="Transacciones" />
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -76,6 +81,7 @@ export class AnalyticsDashboardComponent implements OnInit {
   stats: any = { currentMonthSales: 0, currentMonthUnits: 0, currentMonthTransactions: 0 };
   lowStock: any[] = [];
   lastUpdate = new Date();
+  protected icons = ICONS;
 
   public lineChartData: ChartConfiguration<'line'>['data'] = {
     datasets: [{

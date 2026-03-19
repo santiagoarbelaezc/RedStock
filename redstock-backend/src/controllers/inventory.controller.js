@@ -32,8 +32,11 @@ const updateQuantity = async (req, res, next) => {
     }
 
     const record = await InventoryModel.updateQuantity(branchId, productId, quantity);
+    console.log(`[INVENTORY] Ajuste manual: Sucursal ${branchId}, Producto ${productId} -> ${quantity} unidades (por ${req.user.email})`);
+
     return successResponse(res, record, 'Inventario actualizado');
   } catch (err) {
+    console.error(`[INVENTORY] Error ajustando cantidad: ${err.message}`);
     next(err);
   }
 };

@@ -13,12 +13,15 @@ const branchRoutes    = require('./routes/branch.routes');
 const inventoryRoutes = require('./routes/inventory.routes');
 const transferRoutes  = require('./routes/transfer.routes');
 const analyticsRoutes = require('./routes/analytics.routes');
+const productRoutes   = require('./routes/product.routes');
 
+const morgan = require('morgan');
 const app = express();
 
 // ─── Middlewares globales ──────────────────────────────────────────────────────
 app.use(cors());
 app.use(express.json());
+app.use(morgan('dev')); // Registro de peticiones HTTP
 
 // ─── Rutas ────────────────────────────────────────────────────────────────────
 app.use('/api/auth',      authRoutes);
@@ -26,6 +29,7 @@ app.use('/api/branches',  branchRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/transfers', transferRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/products',  productRoutes);
 
 // ─── Health check ─────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {

@@ -61,7 +61,14 @@ El corazón de RedStock es su motor de **Traslados Inteligentes**:
   <img src="https://img.shields.io/badge/Raw_SQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" />
 </div>
 
-> 💾 **Infraestructura:** Gestión de BD mediante Docker y entornos de producción.
+### **Infraestructura**
+<div align="center">
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" />
+  <img width="8" />
+  <img src="https://img.shields.io/badge/Docker_Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white" />
+</div>
+
+> 🐳 **Infraestructura:** Toda la solución se ejecuta mediante **contenedores Docker**. Base de datos, backend y frontend orquestados con Docker Compose.
 
 ---
 
@@ -73,6 +80,7 @@ El corazón de RedStock es su motor de **Traslados Inteligentes**:
 | **Frontend UI** | ✅ Refactorizado | Arquitectura de componentes separados (HTML/CSS/TS) y optimización de UX. |
 | **Dashboard** | ✅ Funcional | Métricas de ventas, stock bajo y comparativa mensual con Chart.js. |
 | **Autenticación** | ✅ Protegido | Guards de Angular y Middlewares de JWT implementados. |
+| **Docker** | ✅ Requerido | Toda la solución debe ejecutarse utilizando contenedores Docker. |
 
 ---
 
@@ -93,6 +101,12 @@ El corazón de RedStock es su motor de **Traslados Inteligentes**:
 - Gráficos circulares para distribución de estado de inventario.
 - Listado dinámico de alertas urgentes para la gerencia.
 
+### **🐳 Contenedores Docker**
+- Cada servicio (frontend, backend, base de datos) corre en su propio contenedor aislado.
+- Orquestación completa con `docker-compose.yml`.
+- Variables de entorno gestionadas de forma segura por servicio.
+- Red interna entre contenedores sin exponer puertos innecesarios.
+
 ---
 
 ## 📦 **Arquitectura del Código (Frontend)**
@@ -105,9 +119,62 @@ El proyecto utiliza una estructura modular limpia:
 
 ---
 
+## 🐳 **Arquitectura Docker**
+
+```
+redstock/
+├── docker-compose.yml          # Orquestador principal
+├── redstock-backend/
+│   ├── Dockerfile              # Imagen del backend (Node.js)
+│   └── .env                    # Variables de entorno del backend
+└── redstock-frontend/
+    └── Dockerfile              # Imagen del frontend (Angular + Nginx)
+```
+
+### **Servicios definidos en `docker-compose.yml`**
+
+| Servicio | Imagen Base | Puerto | Descripción |
+|---|---|---|---|
+| `db` | `mysql:8` | `3306` | Base de datos MySQL |
+| `backend` | `node:20-alpine` | `3000` | API REST con Express |
+| `frontend` | `nginx:alpine` | `80` | Angular servido con Nginx |
+
+---
+
 ## ⚙️ **Cómo ejecutar el proyecto**
 
-### 💻 Backend
+### 🐳 Con Docker (Recomendado)
+
+> **Requisito:** Tener [Docker](https://www.docker.com/) y [Docker Compose](https://docs.docker.com/compose/) instalados.
+
+```bash
+# 1. Clonar el repositorio
+git clone https://github.com/santiagoarbelaezc/redstock.git
+cd redstock
+
+# 2. Configurar variables de entorno
+cp redstock-backend/.env.example redstock-backend/.env
+# Edita el archivo .env con tus credenciales si es necesario
+
+# 3. Levantar todos los servicios
+docker compose up --build
+
+# 4. Acceder a la aplicación
+# Frontend → http://localhost:80
+# Backend  → http://localhost:3000
+```
+
+```bash
+# Detener todos los servicios
+docker compose down
+
+# Detener y eliminar volúmenes (reinicia la BD)
+docker compose down -v
+```
+
+### 💻 Sin Docker (Desarrollo Local)
+
+#### Backend
 ```bash
 cd redstock-backend
 npm install
@@ -115,7 +182,7 @@ npm install
 npm start
 ```
 
-### 🎨 Frontend
+#### Frontend
 ```bash
 cd redstock-frontend
 npm install

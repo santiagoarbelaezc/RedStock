@@ -48,7 +48,7 @@ export class DashboardComponent implements OnInit {
     
     forkJoin({
       inventory: this.inventory.getByBranch(bid, 1, 1000),
-      analytics: this.analytics.getSalesByMonth(bid),
+      analytics: this.analytics.getCurrentMonthSales(bid),
       transfers: this.transfers.getByBranch(bid)
     }).subscribe({
       next: (results: any) => {

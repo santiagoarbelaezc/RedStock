@@ -47,12 +47,68 @@ const SaleModel = {
   },
 
   create: async (branchId, productId, quantity, total) => {
-    const [result] = await pool.query(
-      `INSERT INTO sales (branch_id, product_id, quantity, total)
-       VALUES (?, ?, ?, ?)`,
-      [branchId, productId, quantity, total]
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      const [result] = await connection.query(
+        `INSERT INTO sales (branch_id, product_id, quantity, total)
+         VALUES (?, ?, ?, ?)`,
+        [branchId, productId, quantity, total]
+      );
+
+      // Registrar movimiento de inventario (Salida por Venta)
+      await connection.query(
+        `INSERT INTO inventory_movements 
+         (branch_id, product_id, type, quantity, reference_id, reference_type) 
+         VALUES (?, ?, 'OUT', ?, ?, 'sale')`,
+        [branchId, productId, quantity, result.insertId]
+      );
+
+      await connection.commit();
+      return { id: result.insertId, branchId, productId, quantity, total };
+    } catch (err) {
+      await connection.rollback();
+      throw err;
+    } finally {
+      connection.release();
+    }
+  },
+
+  // Obtiene ventas diarias para los últimos N meses (útil para gráficos de línea)
+  getDailySales: async (branchId, months = 1) => {
+    const [rows] = await pool.query(
+      `SELECT
+         DATE(sale_date) AS date,
+         SUM(total)      AS total_revenue,
+         SUM(quantity)   AS total_units,
+         COUNT(*)        AS transactions
+       FROM sales
+       WHERE branch_id = ?
+         AND sale_date >= DATE_SUB(CURDATE(), INTERVAL ? MONTH)
+       GROUP BY DATE(sale_date)
+       ORDER BY date ASC`,
+      [branchId, months]
     );
-    return { id: result.insertId, branchId, productId, quantity, total };
+    return rows;
+  },
+
+  // Obtiene los productos más vendidos
+  getTopProducts: async (branchId, limit = 5) => {
+    const [rows] = await pool.query(
+      `SELECT
+         p.name,
+         SUM(s.total)    AS total_revenue,
+         SUM(s.quantity) AS total_units
+       FROM sales s
+       JOIN products p ON p.id = s.product_id
+       WHERE s.branch_id = ?
+       GROUP BY s.product_id
+       ORDER BY total_revenue DESC
+       LIMIT ?`,
+      [branchId, limit]
+    );
+    return rows;
   },
 };
 

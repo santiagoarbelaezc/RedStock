@@ -54,11 +54,54 @@ const TransferModel = {
   },
 
   updateStatus: async (transferId, status, receivedAt = null) => {
-    await pool.query(
-      `UPDATE transfers SET status = ?, received_at = ? WHERE id = ?`,
-      [status, receivedAt, transferId]
-    );
-    return TransferModel.getById(transferId);
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      // Actualizar estado del traslado
+      await connection.query(
+        `UPDATE transfers SET status = ?, received_at = ? WHERE id = ?`,
+        [status, receivedAt, transferId]
+      );
+
+      // Si el estado es IN_TRANSIT, registrar TRANSFER_OUT en origen
+      if (status === 'IN_TRANSIT') {
+        const [items] = await connection.query('SELECT * FROM transfer_items WHERE transfer_id = ?', [transferId]);
+        const [transfer] = await connection.query('SELECT origin_branch_id FROM transfers WHERE id = ?', [transferId]);
+        
+        for (const item of items) {
+          await connection.query(
+            `INSERT INTO inventory_movements (branch_id, product_id, type, quantity, reference_id, reference_type)
+             VALUES (?, ?, 'TRANSFER_OUT', ?, ?, 'transfer')`,
+            [transfer[0].origin_branch_id, item.product_id, item.requested_qty, transferId]
+          );
+        }
+      }
+
+      // Si el estado es RECEIVED o PARTIAL, registrar TRANSFER_IN en destino
+      if (['RECEIVED', 'PARTIAL'].includes(status)) {
+        const [items] = await connection.query('SELECT * FROM transfer_items WHERE transfer_id = ?', [transferId]);
+        const [transfer] = await connection.query('SELECT destination_branch_id FROM transfers WHERE id = ?', [transferId]);
+        
+        for (const item of items) {
+          if (item.received_qty > 0) {
+            await connection.query(
+              `INSERT INTO inventory_movements (branch_id, product_id, type, quantity, reference_id, reference_type)
+               VALUES (?, ?, 'TRANSFER_IN', ?, ?, 'transfer')`,
+              [transfer[0].destination_branch_id, item.product_id, item.received_qty, transferId]
+            );
+          }
+        }
+      }
+
+      await connection.commit();
+      return TransferModel.getById(transferId);
+    } catch (err) {
+      await connection.rollback();
+      throw err;
+    } finally {
+      connection.release();
+    }
   },
 
   delete: async (transferId) => {

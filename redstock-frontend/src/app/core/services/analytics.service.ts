@@ -9,15 +9,35 @@ export class AnalyticsService {
 
   constructor(private http: HttpClient) {}
 
-  getSalesByMonth(branchId: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/${branchId}/sales`);
+  getCurrentMonthSales(branchId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/${branchId}/sales/current-month`);
   }
 
-  getComparison(branchId: number, months = 6): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/${branchId}/comparison?months=${months}`);
+  getSalesComparison(branchId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/${branchId}/sales/comparison`);
+  }
+
+  getDailySales(branchId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/${branchId}/sales/daily`);
   }
 
   getInventoryBehavior(branchId: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/${branchId}/inventory`);
+    return this.http.get<any>(`${this.apiUrl}/${branchId}/inventory/behavior`);
+  }
+
+  getLowStock(branchId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/${branchId}/inventory/low-stock`);
+  }
+
+  getTopSellingProducts(branchId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/${branchId}/products/top-selling`);
+  }
+
+  getTransfersSummary(branchId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/${branchId}/transfers/summary`);
+  }
+
+  getGlobalRanking(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/global/ranking`);
   }
 }

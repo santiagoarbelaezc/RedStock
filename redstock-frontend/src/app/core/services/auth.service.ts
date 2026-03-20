@@ -40,8 +40,15 @@ export class AuthService {
   
   getCurrentUser(): User | null {
     try {
-      const user = localStorage.getItem('user');
-      return user ? JSON.parse(user) : null;
+      const userData = localStorage.getItem('user');
+      if (!userData) return null;
+      
+      const user = JSON.parse(userData);
+      // Normalizar branch_id por si viene de una sesión vieja con camelCase
+      if (user && !user.branch_id && user.branchId) {
+        user.branch_id = user.branchId;
+      }
+      return user;
     } catch (error) {
       console.warn('Error parsing user from localStorage:', error);
       return null;
@@ -50,5 +57,30 @@ export class AuthService {
   
   isLoggedIn() { return !!this.getToken(); }
   
+  isSuperAdmin(): boolean {
+    const user = this.getCurrentUser();
+    return user?.role === 'superadmin';
+  }
+
+  isAdmin(): boolean {
+    const user = this.getCurrentUser();
+    return user?.role === 'admin' || user?.role === 'superadmin';
+  }
+
+  isEmployee(): boolean {
+    const user = this.getCurrentUser();
+    return user?.role === 'employee';
+  }
+
+  getCurrentUserRole(): string {
+    const user = this.getCurrentUser();
+    return user?.role || 'employee';
+  }
+
+  getCurrentUserBranchId(): number | null {
+    const user = this.getCurrentUser();
+    return user?.branch_id || null;
+  }
+
   get isAuthenticated$() { return this.isAuthenticatedSubject.asObservable(); }
 }

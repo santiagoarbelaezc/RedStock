@@ -1,4 +1,4 @@
-<aside class="bg-black text-white transition-all duration-300 flex flex-col z-30 shadow-2xl overflow-hidden"
+<aside class="bg-black text-white transition-all duration-300 flex flex-col z-30 shadow-2xl overflow-hidden sticky top-0 h-screen"
        [ngClass]="isCollapsed ? 'w-20' : 'w-52'">
   
   <div class="h-16 flex items-center px-4 border-b border-white/10 shrink-0">
@@ -9,8 +9,9 @@
 
   <div class="flex-1 py-6 overflow-y-auto overflow-x-hidden">
     <nav class="px-2 space-y-1">
-      @for (item of menuItems; track item.path) {
-        <a [routerLink]="item.path"
+      <a 
+        *ngFor="let item of filteredMenuItems" 
+        [routerLink]="item.path" 
            routerLinkActive="bg-white/10 text-white"
            [routerLinkActiveOptions]="{ exact: item.path === '/dashboard' }"
            class="flex items-center px-3 py-3 rounded-xl transition-all group hover:bg-white/5 relative">
@@ -24,17 +25,6 @@
             {{ item.label }}
           </div>
         </a>
-      }
     </nav>
-  </div>
-
-  <div class="p-4 border-t border-white/10 shrink-0">
-    <div class="flex items-center px-2 py-3 bg-white/5 rounded-xl border border-white/5" [ngClass]="{'justify-center': isCollapsed}">
-      <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-gray-700 to-gray-500 shrink-0"></div>
-      <div class="ml-3 transition-opacity duration-300" [ngClass]="isCollapsed ? 'hidden' : 'block'">
-        <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Plan Actual</p>
-        <p class="text-xs font-semibold">Premium Enterprise</p>
-      </div>
-    </div>
   </div>
 </aside>

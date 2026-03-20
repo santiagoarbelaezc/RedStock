@@ -3,11 +3,11 @@ const { successResponse, errorResponse } = require('../utils/response.util');
 
 const getAll = async (req, res, next) => {
   try {
-    const { page = 1, limit = 10, search = '', branchId = null } = req.query;
+    const { page = 1, limit = 10, search = '', branch_id = null } = req.query;
     
     const [products, total] = await Promise.all([
-      ProductModel.getFiltered({ page, limit, search, branchId }),
-      ProductModel.countFiltered({ search, branchId })
+      ProductModel.getFiltered({ page, limit, search, branchId: branch_id }),
+      ProductModel.countFiltered({ search, branchId: branch_id })
     ]);
 
     return successResponse(res, {

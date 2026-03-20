@@ -3,10 +3,9 @@ export interface User {
   name: string;
   email: string;
   role: string;
-  branchId: number;
-  branch_id?: number;
+  branch_id: number;
   branch_name?: string;
-  branchName?: string;
+  createdAt?: string;
 }
 
 export interface AuthResponse {

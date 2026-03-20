@@ -21,6 +21,27 @@ export class AnalyticsService {
     return this.http.get<any>(`${this.apiUrl}/${branchId}/sales/daily`);
   }
 
+  // Rutas Globales (Superadmin)
+  getGlobalSummary(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/global/summary`);
+  }
+
+  getIncomeByBranch(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/global/income-by-branch`);
+  }
+
+  getMonthlyComparison(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/global/monthly`);
+  }
+
+  getTopProductsGlobal(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/global/top-products`);
+  }
+
+  getTransfersGlobalSummary(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/global/transfers`);
+  }
+
   getInventoryBehavior(branchId: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/${branchId}/inventory/behavior`);
   }

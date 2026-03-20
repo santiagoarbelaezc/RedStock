@@ -31,11 +31,12 @@ export class LoginComponent implements OnInit {
 
   ngOnInit() {
     if (this.auth.isLoggedIn()) {
-      this.router.navigate(['/dashboard']);
+      const target = this.auth.isSuperAdmin() ? '/superadmin' : '/dashboard';
+      this.router.navigate([target]);
     }
     
     // Obtener URL de retorno si existe
-    this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
+    this.returnUrl = this.route.snapshot.queryParams['returnUrl'];
   }
 
   onSubmit() {
@@ -44,8 +45,9 @@ export class LoginComponent implements OnInit {
     this.error = '';
     
     this.auth.login(this.loginForm.value.email, this.loginForm.value.password).subscribe({
-      next: () => { 
-        this.router.navigate([this.returnUrl]); 
+      next: (res) => { 
+        const target = this.returnUrl || (this.auth.isSuperAdmin() ? '/superadmin' : '/dashboard');
+        this.router.navigate([target]); 
       },
       error: (err: any) => { 
         this.error = err.error?.message || 'Credenciales inválidas'; 

@@ -29,7 +29,7 @@ export class DashboardComponent implements OnInit {
   get userName() { return this.auth.getCurrentUser()?.name || 'Usuario'; }
   get branchId() { 
     const u = this.auth.getCurrentUser();
-    return u?.branch_id || u?.branchId || 1; 
+    return u?.branch_id || 1; 
   }
 
   constructor(
@@ -62,9 +62,10 @@ export class DashboardComponent implements OnInit {
         this.stats.monthRevenue = results.analytics?.data?.totalRevenue || 0;
 
         // Process transfers
-        const transfers = results.transfers?.data || [];
-        this.stats.pendingTransfers = transfers.filter((t: any) => t.status === 'PENDING').length;
-        this.recentTransfers = transfers.slice(0, 5);
+        const transfersData = results.transfers?.data;
+        const transfersArray = transfersData?.items || transfersData || [];
+        this.stats.pendingTransfers = transfersArray.filter((t: any) => t.status === 'PENDING').length;
+        this.recentTransfers = transfersArray.slice(0, 5);
         
         this.loading = false;
       },

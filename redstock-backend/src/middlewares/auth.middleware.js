@@ -13,28 +13,75 @@ const verifyToken = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
-    // Log exitoso opcional (puede ser ruidoso, morgan ya registra la ruta)
-    // console.log(`[AUTH] Usuario verificado: ${decoded.email} [${decoded.role}]`);
     next();
   } catch (err) {
     console.error(`[AUTH] Error verificando token: ${err.message}`);
-    return errorResponse(res, 'Token inválido o expirado', 401); // 401 es más preciso para fallos de token
+    return errorResponse(res, 'Token inválido o expirado', 401);
   }
 };
 
-const checkRole = (roles = []) => {
-  return (req, res, next) => {
-    if (!req.user) {
-      return errorResponse(res, 'No autenticado', 401);
-    }
-
-    if (!roles.includes(req.user.role)) {
-      console.warn(`[AUTH] Acceso denegado p/ rol [${req.user.role}] en ruta ${req.originalUrl}. Requerido: ${roles.join(',')}`);
-      return errorResponse(res, 'No tienes permisos para realizar esta acción', 403);
-    }
-
-    next();
-  };
+const isSuperAdmin = (req, res, next) => {
+  if (req.user && req.user.role === 'superadmin') {
+    return next();
+  }
+  return errorResponse(res, 'Acceso denegado. Se requiere rol superadmin', 403);
 };
 
-module.exports = { verifyToken, checkRole };
+const isAdmin = (req, res, next) => {
+  if (req.user && (req.user.role === 'admin' || req.user.role === 'superadmin')) {
+    return next();
+  }
+  return errorResponse(res, 'Acceso denegado. Se requiere rol admin', 403);
+};
+
+const isAdminOfBranch = (req, res, next) => {
+  if (!req.user) return errorResponse(res, 'No autenticado', 401);
+
+  const branchId = parseInt(req.params.branchId || req.body.branchId || req.query.branchId);
+
+  if (req.user.role === 'superadmin') {
+    return next();
+  }
+
+  if (req.user.role === 'admin' && req.user.branch_id === branchId) {
+    return next();
+  }
+
+  return errorResponse(res, 'Acceso denegado. No tienes permisos para gestionar esta sucursal', 403);
+};
+
+const isSuperAdminOrAdmin = (req, res, next) => {
+  if (req.user && (req.user.role === 'superadmin' || req.user.role === 'admin')) {
+    return next();
+  }
+  return errorResponse(res, 'Acceso denegado. Se requiere rol admin o superadmin', 403);
+};
+
+const isMemberOfBranch = (req, res, next) => {
+  if (!req.user) return errorResponse(res, 'No autenticado', 401);
+
+  const branchId = parseInt(req.params.branchId || req.body.branch_id || req.body.branchId || req.query.branchId || req.params.transferId);
+
+  // Superadmin tiene acceso a todo
+  if (req.user.role === 'superadmin') {
+    return next();
+  }
+
+  // Comparación flexible (soporta string vs number)
+  if (req.user.branch_id == branchId) {
+    return next();
+  }
+
+  // Especial para traslados: si el usuario es del origen o destino
+  // Esto se manejaría mejor en el controlador de traslados, pero aquí validamos la sucursal general
+  return errorResponse(res, 'Acceso denegado. No tienes permisos para acceder a esta sucursal', 403);
+};
+
+module.exports = { 
+  verifyToken, 
+  isSuperAdmin, 
+  isAdmin, 
+  isAdminOfBranch, 
+  isSuperAdminOrAdmin,
+  isMemberOfBranch
+};

@@ -1,0 +1,12 @@
+node_modules
+dist
+.angular
+.angular/cache
+.git
+.gitignore
+*.md
+coverage
+.nyc_output
+.env
+*.log
+npm-debug.log*

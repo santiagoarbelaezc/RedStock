@@ -1,0 +1,101 @@
+<div class="space-y-6">
+  <!-- Header & Filters -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div class="flex items-center gap-4">
+      <div class="w-12 h-12 bg-black/5 rounded-2xl flex items-center justify-center text-black shadow-inner">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Gestión de Usuarios</h1>
+        <p class="text-sm text-gray-400 mt-0.5">
+          {{ authService.isSuperAdmin() ? 'Administra todo el personal de la organización' : 'Administra el equipo de tu sucursal' }}
+        </p>
+      </div>
+    </div>
+    
+    <div class="flex items-center gap-3">
+      <!-- Filtro ROL -->
+      <select 
+        [(ngModel)]="selectedRole" 
+        class="bg-white border border-gray-100 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-black/5 transition-all w-40 shadow-sm">
+        <option value="all">Todos los roles</option>
+        <option value="superadmin" *ngIf="authService.isSuperAdmin()">Superadmin</option>
+        <option value="admin">Admin</option>
+        <option value="employee">Empleado</option>
+      </select>
+
+      <!-- Filtro Sucursal (solo superadmin) -->
+      <select 
+        *ngIf="authService.isSuperAdmin()"
+        [(ngModel)]="selectedBranch" 
+        class="bg-white border border-gray-100 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-black/5 transition-all w-48 shadow-sm">
+        <option value="all">Todas las sucursales</option>
+        <option value="null">Sin sucursal (Superadmin)</option>
+        <option *ngFor="let b of branches" [value]="b.id">{{ b.name }}</option>
+      </select>
+
+      <button [routerLink]="['/users/new']" class="py-2.5 px-6 bg-black text-white rounded-xl font-semibold hover:bg-gray-800 transition-all text-sm shadow-lg shadow-gray-200">
+        + Nuevo Usuario
+      </button>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-gray-50/50 border-b border-gray-100">
+            <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">Usuario</th>
+            <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">Rol</th>
+            <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">Sucursal</th>
+            <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">Registro</th>
+            <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400 text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          <tr *ngFor="let user of filteredUsers" class="hover:bg-gray-50/50 transition-colors group">
+            <td class="px-6 py-4">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 font-bold uppercase">
+                  {{ user.name.substring(0,2) }}
+                </div>
+                <div class="flex flex-col">
+                  <span class="text-sm font-semibold text-gray-900">{{ user.name }}</span>
+                  <span class="text-[10px] text-gray-400">{{ user.email }}</span>
+                </div>
+              </div>
+            </td>
+            <td class="px-6 py-4">
+              <span [class]="getRoleBadgeClass(user.role)">{{ user.role }}</span>
+            </td>
+            <td class="px-6 py-4 text-sm font-medium text-gray-600">
+              {{ user.branch_name || 'Global' }}
+            </td>
+            <td class="px-6 py-4 text-xs text-gray-400 font-medium">
+              {{ user.createdAt | date:'dd MMM yyyy' }}
+            </td>
+            <td class="px-6 py-4 text-right">
+              <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button 
+                  *ngIf="canEdit(user)"
+                  [routerLink]="['/users', user.id, 'edit']"
+                  class="p-2 text-gray-400 hover:text-black transition-colors">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                </button>
+                <button 
+                  *ngIf="canDelete(user)"
+                  (click)="onDelete(user.id)" 
+                  class="p-2 text-gray-300 hover:text-red-500 transition-colors">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<app-loading-spinner *ngIf="loading && users.length === 0"></app-loading-spinner>

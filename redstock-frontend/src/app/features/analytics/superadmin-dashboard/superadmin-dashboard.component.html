@@ -1,0 +1,105 @@
+<div class="space-y-8 pb-12">
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-3xl font-black text-gray-900 tracking-tight">Panel Global</h1>
+      <p class="text-sm text-gray-400 mt-1 font-medium">Resumen corporativo de todas las sucursales</p>
+    </div>
+    <div class="px-4 py-2 bg-black text-white rounded-2xl text-xs font-bold uppercase tracking-widest">
+      Super Admin
+    </div>
+  </div>
+
+  <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+  <div *ngIf="!loading && summary" class="animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+        <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Ingresos Totales</p>
+        <h3 class="text-2xl font-black text-gray-900">{{ formatCurrency(summary.total_ingresos_acumulados) }}</h3>
+      </div>
+      <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+        <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Ventas Mes Actual</p>
+        <h3 class="text-2xl font-black text-gray-900">{{ summary.ventas_mes_actual }}</h3>
+        <p class="text-[10px] text-green-500 font-bold mt-1">+{{ formatCurrency(summary.ingresos_mes_actual) }} este mes</p>
+      </div>
+      <div class="bg-black p-6 rounded-3xl shadow-xl shadow-gray-200">
+        <p class="text-[10px] font-bold uppercase tracking-widest text-gray-300 mb-2">Mejor Sucursal</p>
+        <h3 class="text-xl font-bold text-white">{{ summary.mejor_sucursal_mes?.name || 'N/A' }}</h3>
+        <p class="text-[10px] text-gray-400 mt-1">{{ formatCurrency(summary.mejor_sucursal_mes?.ingresos || 0) }} ingresos</p>
+      </div>
+      <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+        <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Bajo Rendimiento</p>
+        <h3 class="text-xl font-bold text-red-500">{{ summary.peor_sucursal_mes?.name || 'N/A' }}</h3>
+        <p class="text-[10px] text-gray-400 mt-1">Requiere atención</p>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+      <!-- Ingresos por sucursal -->
+      <div class="lg:col-span-2 space-y-6">
+        <div class="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm">
+          <h3 class="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+            Ranking de Sucursales
+          </h3>
+          <div class="space-y-4">
+            <div *ngFor="let b of incomeByBranch" class="flex flex-col gap-2 p-4 rounded-2xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-bold text-gray-900">{{ b.branch_name }}</span>
+                <span class="text-sm font-black text-black">{{ formatCurrency(b.total_ingresos) }}</span>
+              </div>
+              <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                <div 
+                  class="bg-black h-full rounded-full transition-all duration-1000" 
+                  [style.width.%]="b.porcentaje_del_total">
+                </div>
+              </div>
+              <div class="flex justify-between text-[10px] font-medium text-gray-400 uppercase tracking-widest">
+                <span>{{ b.total_ventas }} ventas</span>
+                <span>{{ b.porcentaje_del_total | number:'1.1-1' }}% del total</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Productos Globales -->
+      <div class="space-y-6">
+        <div class="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm">
+          <h3 class="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+            Top 5 Productos
+          </h3>
+          <div class="space-y-5">
+            <div *ngFor="let p of topProducts.slice(0,5)" class="flex items-center gap-4">
+              <div class="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center font-bold text-gray-400 text-xs">
+                {{ p.name.substring(0,2) }}
+              </div>
+              <div class="flex-1">
+                <p class="text-xs font-bold text-gray-900 leading-tight">{{ p.name }}</p>
+                <p class="text-[9px] text-gray-400 uppercase tracking-widest mt-0.5">Líder: {{ p.sucursal_lider || 'Global' }}</p>
+              </div>
+              <div class="text-right">
+                <p class="text-xs font-black text-black">{{ p.cantidad_total }} u.</p>
+                <p class="text-[9px] text-green-500 font-bold mt-0.5">{{ formatCurrency(p.ingresos_totales) }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-black p-8 rounded-[32px] text-white">
+          <h3 class="text-lg font-bold mb-4">Resumen Traslados</h3>
+          <div class="grid grid-cols-2 gap-4">
+            <div *ngFor="let st of transfersSummary?.por_estado" class="bg-white/10 p-4 rounded-2xl border border-white/5">
+              <p class="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1">{{ st.status }}</p>
+              <p class="text-lg font-black">{{ st.cantidad }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

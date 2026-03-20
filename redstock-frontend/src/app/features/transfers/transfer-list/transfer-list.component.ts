@@ -21,9 +21,15 @@ export class TransferListComponent implements OnInit {
   loading = true;
   protected icons = ICONS;
 
+  // Paginación
+  currentPage = 1;
+  pageSize = 10;
+  totalItems = 0;
+  totalPages = 0;
+
   get myBranchId() { 
     const u = this.auth.getCurrentUser();
-    return u?.branch_id || u?.branchId || 1; 
+    return u?.branch_id || 1; 
   }
 
   constructor(private transferService: TransferService, private auth: AuthService) {}
@@ -32,17 +38,27 @@ export class TransferListComponent implements OnInit {
     this.loadTransfers();
   }
 
-  loadTransfers() {
+  loadTransfers(page: number = 1) {
     this.loading = true;
-    this.transferService.getByBranch(this.myBranchId).subscribe({
+    this.currentPage = page;
+    
+    this.transferService.getByBranch(this.myBranchId, this.currentPage, this.pageSize).subscribe({
       next: (res: any) => { 
-        this.transfers = res.data || []; 
+        this.transfers = res.data?.items || []; 
+        this.totalItems = res.data?.pagination?.total || 0;
+        this.totalPages = res.data?.pagination?.totalPages || 0;
         this.loading = false; 
       },
       error: () => { 
         this.loading = false; 
       }
     });
+  }
+
+  goToPage(page: number) {
+    if (page >= 1 && page <= this.totalPages) {
+      this.loadTransfers(page);
+    }
   }
 
   deleteTransfer(id: number) {
@@ -61,5 +77,9 @@ export class TransferListComponent implements OnInit {
       next: () => this.loadTransfers(),
       error: (err) => alert(err.error?.message || 'Error al actualizar')
     });
+  }
+
+  isAdminOrSuperAdmin(): boolean {
+    return this.auth.isAdmin() || this.auth.isSuperAdmin();
   }
 }

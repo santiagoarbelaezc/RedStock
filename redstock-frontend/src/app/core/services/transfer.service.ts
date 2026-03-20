@@ -9,12 +9,12 @@ export class TransferService {
 
   constructor(private http: HttpClient) {}
 
-  getByBranch(branchId: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/${branchId}`);
+  getByBranch(branchId: number, page: number = 1, limit: number = 10): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/${branchId}?page=${page}&limit=${limit}`);
   }
 
-  create(originBranchId: number, destinationBranchId: number, items: any[]): Observable<any> {
-    return this.http.post<any>(this.apiUrl, { originBranchId, destinationBranchId, items });
+  create(origin_branch_id: number, destination_branch_id: number, items: any[]): Observable<any> {
+    return this.http.post<any>(this.apiUrl, { origin_branch_id, destination_branch_id, items });
   }
 
   confirmReception(transferId: number, items: any[]): Observable<any> {

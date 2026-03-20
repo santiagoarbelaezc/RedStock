@@ -18,7 +18,7 @@ export class NavbarComponent implements OnInit {
 
   ngOnInit() {
     const user = this.auth.getCurrentUser();
-    const bid = user?.branch_id || user?.branchId;
+    const bid = user?.branch_id;
     
     if (user && bid && !user.branch_name) {
       this.branchService.getById(bid).subscribe({
@@ -43,7 +43,7 @@ export class NavbarComponent implements OnInit {
   get branchName() { 
     const user = this.auth.getCurrentUser();
     if (!user) return 'Sucursal Principal';
-    return user.branch_name || user.branchName || 'Sucursal Principal'; 
+    return user.branch_name || 'Sucursal Principal'; 
   }
   
   get userInitials() { 

@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { NgFor, NgIf, NgClass } from '@angular/common';
 import { SafeHtmlPipe } from '../../pipes/safe-html.pipe';
 import { ICONS } from '../../constants/icons.constant';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -15,12 +16,23 @@ export class SidebarComponent {
   @Input() isCollapsed = false;
   @Output() toggleCollapse = new EventEmitter<void>();
 
+  constructor(private authService: AuthService) {}
+
   menuItems = [
-    { label: 'Dashboard', path: '/dashboard', icon: ICONS.dashboard },
-    { label: 'Inventario', path: '/inventory', icon: ICONS.inventory },
-    { label: 'Traslados', path: '/transfers', icon: ICONS.transfers },
-    { label: 'Sucursales', path: '/branches', icon: ICONS.branches },
-    { label: 'Productos', path: '/products', icon: ICONS.products },
-    { label: 'Analíticas', path: '/analytics', icon: ICONS.analytics },
+    { label: 'Global', path: '/superadmin', icon: ICONS.analytics, roles: ['superadmin'] },
+    { label: 'Usuarios', path: '/users', icon: ICONS.products, roles: ['admin', 'superadmin'] },
+    { label: 'Inventario', path: '/inventory', icon: ICONS.inventory, roles: ['admin', 'employee', 'superadmin'] },
+    { label: 'Productos', path: '/products', icon: ICONS.products, roles: ['admin', 'superadmin'] },
+    { label: 'Ventas', path: '/sales', icon: ICONS.analytics, roles: ['admin', 'employee'] },
+    { label: 'Traslados', path: '/transfers', icon: ICONS.transfers, roles: ['admin', 'employee'] },
+    { label: 'Movimientos', path: '/movements', icon: ICONS.inventory, roles: ['admin'] },
+    { label: 'Analíticas', path: '/analytics', icon: ICONS.analytics, roles: ['admin', 'superadmin'] },
+    { label: 'Sucursales', path: '/branches', icon: ICONS.branches, roles: ['superadmin'] },
   ];
+
+  get filteredMenuItems() {
+    return this.menuItems.filter(item => 
+      !item.roles || item.roles.includes(this.authService.getCurrentUserRole())
+    );
+  }
 }

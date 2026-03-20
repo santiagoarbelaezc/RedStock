@@ -55,7 +55,7 @@ export class ProductListComponent implements OnInit {
       page: this.currentPage,
       limit: this.pageSize,
       search: this.searchTerm,
-      branchId: this.selectedBranchId
+      branch_id: this.selectedBranchId
     }).subscribe({
       next: (res: any) => {
         const data = res.data || {};

@@ -32,7 +32,7 @@ export class InventoryListComponent implements OnInit {
 
   get myBranchId() { 
     const u = this.auth.getCurrentUser();
-    return u?.branch_id || u?.branchId || 1; 
+    return u?.branch_id || 1; 
   }
 
   constructor(

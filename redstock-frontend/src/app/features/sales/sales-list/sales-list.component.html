@@ -1,0 +1,171 @@
+<div class="space-y-6">
+  <!-- Header & Filters -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div class="flex items-center gap-4">
+      <div class="w-12 h-12 bg-black/5 rounded-2xl flex items-center justify-center text-black shadow-inner" [innerHTML]="icons.analytics | safeHtml"></div>
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Ventas</h1>
+        <p class="text-sm text-gray-400 mt-0.5">Historial completo y registro de transacciones</p>
+      </div>
+    </div>
+    
+    <div class="flex items-center gap-3">
+      <select 
+        [(ngModel)]="selectedBranchId" 
+        (change)="onBranchFilterChange()"
+        [disabled]="!isAdmin()"
+        class="bg-white border border-gray-100 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-black/5 transition-all w-48 shadow-sm disabled:opacity-50">
+        <option *ngIf="isAdmin()" value="all">Todas las sucursales</option>
+        <option *ngFor="let b of branches" [value]="b.id">{{ b.name }}</option>
+      </select>
+
+      <button (click)="openModal()" class="py-2.5 px-6 bg-black text-white rounded-xl font-semibold hover:bg-gray-800 transition-all text-sm shadow-lg shadow-gray-200">
+        + Registrar Venta
+      </button>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-gray-50/50 border-b border-gray-100">
+            <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">ID</th>
+            <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">Sucursal</th>
+            <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">Producto</th>
+            <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">Cant.</th>
+            <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">Total</th>
+            <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">Fecha</th>
+            <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400 text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          <tr *ngFor="let sale of sales" class="hover:bg-gray-50/50 transition-colors group">
+            <td class="px-6 py-4">
+              <span class="text-xs font-medium text-gray-300">#{{ sale.id }}</span>
+            </td>
+            <td class="px-6 py-4">
+              <span class="text-sm font-semibold text-gray-900">{{ sale.branch_name }}</span>
+            </td>
+            <td class="px-6 py-4">
+              <div class="flex flex-col">
+                <span class="text-sm font-medium text-gray-900">{{ sale.product_name }}</span>
+                <span class="text-[10px] text-gray-400">{{ sale.sku }}</span>
+              </div>
+            </td>
+            <td class="px-6 py-4">
+              <span class="px-2 py-1 bg-gray-100 rounded-lg text-xs font-bold text-gray-600">{{ sale.quantity }}</span>
+            </td>
+            <td class="px-6 py-4">
+              <span class="text-sm font-bold text-black">{{ sale.total | currency:'USD':'symbol':'1.0-0' }}</span>
+            </td>
+            <td class="px-6 py-4">
+              <span class="text-xs text-gray-500">{{ sale.sale_date | date:'dd/MM/yyyy HH:mm' }}</span>
+            </td>
+            <td class="px-6 py-4 text-right">
+              <button 
+                *ngIf="isAdmin() || sale.branch_id === currentUser?.branch_id"
+                (click)="onDelete(sale.id!)" 
+                class="p-2 text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </button>
+            </td>
+          </tr>
+          
+          <tr *ngIf="sales.length === 0 && !loading">
+            <td colspan="7" class="px-6 py-12 text-center">
+              <div class="flex flex-col items-center gap-2">
+                <div class="text-gray-200" [innerHTML]="icons.analytics | safeHtml"></div>
+                <p class="text-gray-400 text-sm">No se encontraron ventas registradas</p>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Paginación Footer -->
+    <div class="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
+      <div class="text-xs text-gray-400">
+        Mostrando <span class="font-bold text-gray-900">{{ (currentPage - 1) * pageSize + 1 }}</span> - 
+        <span class="font-bold text-gray-900">{{ (currentPage * pageSize) > totalItems ? totalItems : (currentPage * pageSize) }}</span> 
+        de <span class="font-bold text-gray-900">{{ totalItems }}</span> ventas
+      </div>
+      <div class="flex items-center gap-2">
+        <button 
+          (click)="prevPage()" 
+          [disabled]="currentPage === 1 || loading"
+          class="p-2 border border-gray-100 rounded-lg hover:bg-white transition-all disabled:opacity-30 disabled:hover:bg-transparent">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <span class="text-xs font-bold px-3">Página {{ currentPage }} de {{ totalPages }}</span>
+        <button 
+          (click)="nextPage()" 
+          [disabled]="currentPage >= totalPages || loading"
+          class="p-2 border border-gray-100 rounded-lg hover:bg-white transition-all disabled:opacity-30 disabled:hover:bg-transparent">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div *ngIf="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" (click)="closeModal()"></div>
+    
+    <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
+      <div class="p-8 border-b border-gray-50">
+        <h2 class="text-xl font-bold text-gray-900">Registrar Nueva Venta</h2>
+        <p class="text-sm text-gray-400 mt-1">El stock se actualizará automáticamente</p>
+      </div>
+      
+      <form [formGroup]="saleForm" (ngSubmit)="onSubmit()" class="p-8 space-y-5">
+        <div class="grid grid-cols-2 gap-4">
+          <div class="col-span-2" *ngIf="isAdmin()">
+            <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Sucursal</label>
+            <select formControlName="branchId" class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-black transition-all">
+              <option value="" disabled>Seleccionar sucursal</option>
+              <option *ngFor="let b of branches" [value]="b.id">{{ b.name }}</option>
+            </select>
+          </div>
+          <input type="hidden" formControlName="branchId" *ngIf="!isAdmin()">
+          
+          <div class="col-span-2">
+            <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Producto</label>
+            <select formControlName="productId" class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-black transition-all">
+              <option value="" disabled>Seleccionar producto</option>
+              <option *ngFor="let p of products" [value]="p.id">{{ p.name }} ({{ p.sku }})</option>
+            </select>
+          </div>
+          
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Cantidad</label>
+            <input type="number" formControlName="quantity" class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-black transition-all">
+          </div>
+          
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Total ($)</label>
+            <input type="number" formControlName="total" class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-black transition-all">
+          </div>
+          
+          <div class="col-span-2">
+            <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Fecha de Venta</label>
+            <input type="date" formControlName="saleDate" class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-black transition-all">
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 pt-6">
+          <button type="button" (click)="closeModal()" class="flex-1 py-3 border border-gray-100 text-gray-400 rounded-xl font-bold uppercase text-[10px] tracking-widest hover:bg-gray-50 transition-all">
+            Cancelar
+          </button>
+          <button type="submit" [disabled]="saleForm.invalid || loading" class="flex-1 py-3 bg-black text-white rounded-xl font-bold uppercase text-[10px] tracking-widest hover:bg-gray-800 transition-all disabled:opacity-50">
+            {{ loading ? 'Guardando...' : 'Confirmar Venta' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<app-loading-spinner *ngIf="loading && sales.length === 0"></app-loading-spinner>

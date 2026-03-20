@@ -253,6 +253,152 @@ const getDailySalesCurrentMonth = async (req, res, next) => {
     next(err);
   }
 };
+// GET /api/analytics/global/summary
+const getGlobalSummary = async (req, res, next) => {
+  try {
+    const [kpis] = await pool.query(`
+      SELECT 
+        SUM(total) as total_ingresos_acumulados,
+        COUNT(*) as total_ventas_acumuladas,
+        SUM(CASE WHEN MONTH(sale_date) = MONTH(CURRENT_DATE()) AND YEAR(sale_date) = YEAR(CURRENT_DATE()) THEN total ELSE 0 END) as ingresos_mes_actual,
+        COUNT(CASE WHEN MONTH(sale_date) = MONTH(CURRENT_DATE()) AND YEAR(sale_date) = YEAR(CURRENT_DATE()) THEN 1 END) as ventas_mes_actual
+      FROM sales
+    `);
+
+    const [bestBranch] = await pool.query(`
+      SELECT b.name, SUM(s.total) as ingresos
+      FROM sales s
+      JOIN branches b ON s.branch_id = b.id
+      WHERE MONTH(s.sale_date) = MONTH(CURRENT_DATE())
+      AND YEAR(s.sale_date) = YEAR(CURRENT_DATE())
+      GROUP BY b.id
+      ORDER BY ingresos DESC
+      LIMIT 1
+    `);
+
+    const [worstBranch] = await pool.query(`
+      SELECT b.name, SUM(s.total) as ingresos
+      FROM sales s
+      JOIN branches b ON s.branch_id = b.id
+      WHERE MONTH(s.sale_date) = MONTH(CURRENT_DATE())
+      AND YEAR(s.sale_date) = YEAR(CURRENT_DATE())
+      GROUP BY b.id
+      ORDER BY ingresos ASC
+      LIMIT 1
+    `);
+
+    return successResponse(res, {
+      ...kpis[0],
+      mejor_sucursal_mes: bestBranch[0] || null,
+      peor_sucursal_mes: worstBranch[0] || null
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// GET /api/analytics/global/income-by-branch
+const getIncomeByBranch = async (req, res, next) => {
+  try {
+    const [totalRevenueRow] = await pool.query('SELECT SUM(total) as total FROM sales');
+    const globalTotal = totalRevenueRow[0].total || 1;
+
+    const [rows] = await pool.query(`
+      SELECT 
+        b.name as branch_name,
+        SUM(s.total) as total_ingresos,
+        COUNT(s.id) as total_ventas,
+        (SUM(s.total) / ? * 100) as porcentaje_del_total
+      FROM branches b
+      LEFT JOIN sales s ON b.id = s.branch_id
+      GROUP BY b.id
+      ORDER BY total_ingresos DESC
+    `, [globalTotal]);
+
+    return successResponse(res, rows);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// GET /api/analytics/global/monthly-comparison
+const getMonthlyComparison = async (req, res, next) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT 
+        MONTH(s.sale_date) as mes,
+        YEAR(s.sale_date) as anio,
+        b.name as branch_name,
+        SUM(s.total) as total_ingresos
+      FROM sales s
+      JOIN branches b ON s.branch_id = b.id
+      WHERE s.sale_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
+      GROUP BY anio, mes, b.id
+      ORDER BY anio ASC, mes ASC
+    `);
+
+    // Transformar para que el frontend reciba un objeto por mes con columnas por sucursal
+    // o un formato que Chart.js maneje bien para múltiples líneas.
+    return successResponse(res, rows);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// GET /api/analytics/global/top-products
+const getTopProductsGlobal = async (req, res, next) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT 
+        p.name, p.sku,
+        SUM(s.quantity) as cantidad_total,
+        SUM(s.total) as ingresos_totales,
+        (SELECT b2.name FROM sales s2 JOIN branches b2 ON s2.branch_id = b2.id 
+         WHERE s2.product_id = p.id GROUP BY b2.id ORDER BY SUM(s2.quantity) DESC LIMIT 1) as sucursal_lider
+      FROM sales s
+      JOIN products p ON s.product_id = p.id
+      GROUP BY p.id
+      ORDER BY ingresos_totales DESC
+      LIMIT 10
+    `);
+
+    return successResponse(res, rows);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// GET /api/analytics/global/transfers-summary
+const getTransfersGlobalSummary = async (req, res, next) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT 
+        status, COUNT(*) as cantidad
+      FROM transfers
+      GROUP BY status
+    `);
+
+    const [mostActive] = await pool.query(`
+      SELECT b.name, COUNT(*) as total
+      FROM (
+        SELECT origin_branch_id as branch_id FROM transfers
+        UNION ALL
+        SELECT destination_branch_id as branch_id FROM transfers
+      ) as t
+      JOIN branches b ON t.branch_id = b.id
+      GROUP BY b.id
+      ORDER BY total DESC
+      LIMIT 3
+    `);
+
+    return successResponse(res, {
+      por_estado: rows,
+      sucursales_mas_activas: mostActive
+    });
+  } catch (err) {
+    next(err);
+  }
+};
 
 module.exports = {
   getCurrentMonthSales,
@@ -262,5 +408,10 @@ module.exports = {
   getTopSellingProducts,
   getTransfersSummary,
   getGlobalRanking,
-  getDailySalesCurrentMonth
+  getDailySalesCurrentMonth,
+  getGlobalSummary,
+  getIncomeByBranch,
+  getMonthlyComparison,
+  getTopProductsGlobal,
+  getTransfersGlobalSummary
 };

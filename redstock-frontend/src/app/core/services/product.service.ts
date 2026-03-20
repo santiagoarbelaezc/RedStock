@@ -9,13 +9,13 @@ export class ProductService {
 
   constructor(private http: HttpClient) {}
 
-  getPaginated(params: { page?: number, limit?: number, search?: string, branchId?: number | string }): Observable<any> {
+  getPaginated(params: { page?: number, limit?: number, search?: string, branch_id?: number | string }): Observable<any> {
     let httpParams = new HttpParams();
     
     if (params.page) httpParams = httpParams.set('page', params.page.toString());
     if (params.limit) httpParams = httpParams.set('limit', params.limit.toString());
     if (params.search) httpParams = httpParams.set('search', params.search);
-    if (params.branchId) httpParams = httpParams.set('branchId', params.branchId.toString());
+    if (params.branch_id) httpParams = httpParams.set('branch_id', params.branch_id.toString());
 
     return this.http.get<any>(this.apiUrl, { params: httpParams });
   }

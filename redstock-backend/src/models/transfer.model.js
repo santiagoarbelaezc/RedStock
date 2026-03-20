@@ -28,8 +28,8 @@ const TransferModel = {
     return rows[0] || null;
   },
 
-  // Traslados donde una sucursal es origen o destino
-  getByBranch: async (branchId) => {
+  // Traslados donde una sucursal es origen o destino (con paginación)
+  getByBranch: async (branchId, limit = 10, offset = 0) => {
     const [rows] = await pool.query(
       `SELECT t.*,
               ob.name AS origin_branch_name,
@@ -38,10 +38,21 @@ const TransferModel = {
        JOIN branches ob  ON ob.id  = t.origin_branch_id
        JOIN branches db2 ON db2.id = t.destination_branch_id
        WHERE t.origin_branch_id = ? OR t.destination_branch_id = ?
-       ORDER BY t.requested_at DESC`,
-      [branchId, branchId]
+       ORDER BY t.requested_at DESC
+       LIMIT ? OFFSET ?`,
+      [branchId, branchId, parseInt(limit), parseInt(offset)]
     );
     return rows;
+  },
+
+  countByBranch: async (branchId) => {
+    const [rows] = await pool.query(
+      `SELECT COUNT(*) as total
+       FROM transfers t
+       WHERE t.origin_branch_id = ? OR t.destination_branch_id = ?`,
+      [branchId, branchId]
+    );
+    return rows[0].total;
   },
 
   create: async (originBranchId, destinationBranchId) => {

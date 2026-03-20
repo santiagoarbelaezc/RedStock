@@ -6,23 +6,23 @@ const { successResponse, errorResponse } = require('../utils/response.util');
 // POST /api/transfers — crear solicitud de traslado
 const create = async (req, res, next) => {
   try {
-    const { originBranchId, destinationBranchId, items } = req.body;
+    const { origin_branch_id, destination_branch_id, items } = req.body;
 
-    if (!originBranchId || !destinationBranchId || !items || items.length === 0) {
-      return errorResponse(res, 'originBranchId, destinationBranchId e items son requeridos', 400);
+    if (!origin_branch_id || !destination_branch_id || !items || items.length === 0) {
+      return errorResponse(res, 'origin_branch_id, destination_branch_id e items son requeridos', 400);
     }
-    if (originBranchId === destinationBranchId) {
+    if (origin_branch_id === destination_branch_id) {
       return errorResponse(res, 'El origen y destino no pueden ser la misma sucursal', 400);
     }
 
-    const transfer = await TransferModel.create(originBranchId, destinationBranchId);
-    console.log(`[TRANSFER] Nueva solicitud de traslado: Origen ${originBranchId} -> Destino ${destinationBranchId} (por ${req.user.email})`);
+    const transfer = await TransferModel.create(origin_branch_id, destination_branch_id);
+    console.log(`[TRANSFER] Nueva solicitud de traslado: Origen ${origin_branch_id} -> Destino ${destination_branch_id} (por ${req.user.email})`);
 
     // Crear ítems del traslado
     const createdItems = [];
     for (const item of items) {
-      const qty = item.requestedQty || item.quantity;
-      const ti = await TransferItemModel.create(transfer.id, item.productId, qty);
+      const qty = item.requested_qty || item.requestedQty || item.quantity;
+      const ti = await TransferItemModel.create(transfer.id, item.product_id || item.productId, qty);
       createdItems.push(ti);
     }
 
@@ -33,11 +33,28 @@ const create = async (req, res, next) => {
   }
 };
 
-// GET /api/transfers/:branchId — traslados de una sucursal
+// GET /api/transfers/:branchId — traslados de una sucursal (paginado)
 const getByBranch = async (req, res, next) => {
   try {
-    const transfers = await TransferModel.getByBranch(req.params.branchId);
-    return successResponse(res, transfers, 'Traslados de la sucursal');
+    const { branchId } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    const [transfers, total] = await Promise.all([
+      TransferModel.getByBranch(branchId, limit, offset),
+      TransferModel.countByBranch(branchId)
+    ]);
+
+    return successResponse(res, {
+      items: transfers,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    }, 'Traslados obtenidos con éxito');
   } catch (err) {
     next(err);
   }

@@ -22,11 +22,11 @@ export class TransferFormComponent implements OnInit {
 
   get myBranchId() { 
     const u = this.auth.getCurrentUser();
-    return u?.branch_id || u?.branchId || 1; 
+    return u?.branch_id || 1; 
   }
   
   get myBranchName() { 
-    return this.auth.getCurrentUser()?.branchName || 'Mi Sucursal'; 
+    return this.auth.getCurrentUser()?.branch_name || 'Mi Sucursal'; 
   }
 
   get items() {

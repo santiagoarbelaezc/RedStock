@@ -1,0 +1,86 @@
+<div class="max-w-2xl mx-auto py-8">
+  <div class="bg-white rounded-3xl border border-gray-100 shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
+    <div class="p-8 border-b border-gray-50 flex items-center justify-between">
+      <div>
+        <h2 class="text-xl font-bold text-gray-900">{{ isEdit ? 'Editar Usuario' : 'Crear Nuevo Usuario' }}</h2>
+        <p class="text-sm text-gray-400 mt-1">Completa la información del perfil del usuario</p>
+      </div>
+      <button routerLink="/users" class="text-gray-400 hover:text-black transition-colors">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    
+    <form [formGroup]="userForm" (ngSubmit)="onSubmit()" class="p-8 space-y-6">
+      <div class="grid grid-cols-2 gap-6">
+        <!-- Nombre -->
+        <div class="col-span-2">
+          <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Nombre Completo</label>
+          <input 
+            type="text" 
+            formControlName="name" 
+            placeholder="Ej. Juan Pérez"
+            class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-black transition-all">
+        </div>
+        
+        <!-- Email -->
+        <div class="col-span-2">
+          <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Correo Electrónico</label>
+          <input 
+            type="email" 
+            formControlName="email" 
+            placeholder="usuario@redstock.com"
+            class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-black transition-all">
+        </div>
+
+        <!-- Password -->
+        <div class="col-span-2" *ngIf="!isEdit">
+          <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Contraseña</label>
+          <input 
+            type="password" 
+            formControlName="password" 
+            placeholder="Mínimo 6 caracteres"
+            class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-black transition-all">
+        </div>
+
+        <!-- Rol -->
+        <div>
+          <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Rol de Usuario</label>
+          <select 
+            formControlName="role" 
+            [attr.disabled]="!authService.isSuperAdmin() ? true : null"
+            class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-black transition-all disabled:opacity-50">
+            <option value="" disabled>Seleccionar rol</option>
+            <option *ngFor="let r of getRolesDisponibles()" [value]="r">{{ r }}</option>
+          </select>
+        </div>
+
+        <!-- Sucursal (Solo para creación o si es Superadmin) -->
+        <div *ngIf="!isEdit || authService.isSuperAdmin()">
+          <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Sucursal Asignada</label>
+          <select 
+            formControlName="branch_id" 
+            [attr.disabled]="!authService.isSuperAdmin() ? true : null"
+            class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-black transition-all disabled:opacity-50">
+            <option [ngValue]="null">Acceso Global (Superadmin)</option>
+            <option *ngFor="let b of branches" [value]="b.id">{{ b.name }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 pt-6">
+        <button 
+          type="button" 
+          routerLink="/users" 
+          class="flex-1 py-3 border border-gray-100 text-gray-400 rounded-xl font-bold uppercase text-[10px] tracking-widest hover:bg-gray-50 transition-all">
+          Cancelar
+        </button>
+        <button 
+          type="submit" 
+          [disabled]="userForm.invalid || loading" 
+          class="flex-1 py-3 bg-black text-white rounded-xl font-bold uppercase text-[10px] tracking-widest hover:bg-gray-800 transition-all disabled:opacity-50">
+          {{ loading ? 'Guardando...' : (isEdit ? 'Actualizar Usuario' : 'Crear Usuario') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

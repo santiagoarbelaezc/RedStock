@@ -32,14 +32,10 @@
               </div>
             </div>
 
-            <div class="flex items-center gap-3 pt-6 border-t border-gray-50 mt-auto">
-              <a [routerLink]="['/branches', b.id, 'edit']" 
-                 class="flex-1 py-2 text-center bg-gray-50 text-gray-900 text-[10px] font-bold uppercase tracking-widest rounded-xl hover:bg-gray-100 transition-all">
-                Editar
-              </a>
+            <div class="flex items-center pt-6 border-t border-gray-50 mt-auto">
               <a [routerLink]="['/inventory/branch', b.id]" 
-                 class="flex-1 py-2 text-center bg-black text-white text-[10px] font-bold uppercase tracking-widest rounded-xl hover:bg-gray-800 transition-all shadow-sm">
-                Inventario
+                 class="w-full py-3 text-center bg-black text-white text-[10px] font-bold uppercase tracking-widest rounded-xl hover:bg-gray-800 transition-all shadow-sm">
+                Ver Inventario
               </a>
             </div>
           </div>

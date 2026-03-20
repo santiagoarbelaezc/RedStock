@@ -1,10 +1,7 @@
 const { Router } = require('express');
 const router = Router();
 const { getAll, getById, create, update, remove } = require('../controllers/branch.controller');
-const { verifyToken, checkRole } = require('../middlewares/auth.middleware');
-
-const adminOnly = ['admin'];
-const adminOrManager = ['admin', 'manager'];
+const { verifyToken, isSuperAdmin } = require('../middlewares/auth.middleware');
 
 // GET  /api/branches
 router.get('/', verifyToken, getAll);
@@ -13,12 +10,12 @@ router.get('/', verifyToken, getAll);
 router.get('/:id', verifyToken, getById);
 
 // POST /api/branches
-router.post('/', verifyToken, checkRole(adminOnly), create);
+router.post('/', verifyToken, isSuperAdmin, create);
 
 // PUT  /api/branches/:id
-router.put('/:id', verifyToken, checkRole(adminOrManager), update);
+router.put('/:id', verifyToken, isSuperAdmin, update);
 
 // DELETE /api/branches/:id
-router.delete('/:id', verifyToken, checkRole(adminOnly), remove);
+router.delete('/:id', verifyToken, isSuperAdmin, remove);
 
 module.exports = router;

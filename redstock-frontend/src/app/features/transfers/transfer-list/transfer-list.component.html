@@ -40,14 +40,33 @@
                 <td class="px-8 py-4 font-medium text-gray-500">{{ t.destination_branch_name }}</td>
                 <td class="px-8 py-4"><app-badge-status [status]="t.status" /></td>
                 <td class="px-8 py-4 text-xs text-gray-400 font-medium">{{ t.requested_at | date:'dd/MM/yy HH:mm' }}</td>
-                <td class="px-8 py-4 text-right">
-                  @if (t.status === 'IN_TRANSIT' && t.destination_branch_id === myBranchId) {
+                 <td class="px-8 py-4 text-right flex items-center justify-end gap-2">
+                   <a [routerLink]="['/transfers', t.id]"
+                      class="px-3 py-1.5 bg-gray-50 text-gray-500 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-gray-100 transition-colors">
+                     Ver Detalle
+                   </a>
+
+                   @if (t.status === 'PENDING') {
+                    @if (t.origin_branch_id === myBranchId) {
+                      <button (click)="sendTransfer(t.id)" 
+                              class="px-4 py-1.5 bg-gray-900 text-white rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-black transition-colors">
+                        Despachar
+                      </button>
+                    }
+                    <!-- Ambos (Origen y Destino) pueden eliminar si es PENDING -->
+                    <button (click)="deleteTransfer(t.id)" 
+                            class="px-3 py-1.5 bg-red-50 text-red-500 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-red-100 transition-colors">
+                      Eliminar
+                    </button>
+                   }
+
+                   @if (t.status === 'IN_TRANSIT' && t.destination_branch_id === myBranchId) {
                     <a [routerLink]="['/transfers', t.id, 'confirm']"
                        class="px-4 py-1.5 bg-[var(--accent-color)] text-white rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-black transition-colors">
                       Confirmar
                     </a>
-                  }
-                </td>
+                   }
+                 </td>
               </tr>
             }
           </tbody>

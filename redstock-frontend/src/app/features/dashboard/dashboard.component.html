@@ -39,9 +39,7 @@
         @for (t of recentTransfers; track t.id) {
           <div class="flex items-center justify-between px-8 py-4 hover:bg-gray-50 transition-colors">
             <div class="flex items-center gap-4">
-              <div class="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-lg">
-                🚚
-              </div>
+              <div class="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600" [innerHTML]="icons.transfers | safeHtml"></div>
               <div>
                 <p class="text-sm font-bold text-gray-900">{{ t.origin_branch_name }} → {{ t.destination_branch_name }}</p>
                 <p class="text-[10px] text-gray-400 font-medium">{{ t.requested_at | date:'dd/MM/yyyy HH:mm' }}</p>

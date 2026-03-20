@@ -3,8 +3,22 @@ const { successResponse, errorResponse } = require('../utils/response.util');
 
 const getAll = async (req, res, next) => {
   try {
-    const products = await ProductModel.getAll();
-    return successResponse(res, products, 'Productos obtenidos');
+    const { page = 1, limit = 10, search = '', branchId = null } = req.query;
+    
+    const [products, total] = await Promise.all([
+      ProductModel.getFiltered({ page, limit, search, branchId }),
+      ProductModel.countFiltered({ search, branchId })
+    ]);
+
+    return successResponse(res, {
+      products,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(total / limit)
+      }
+    }, 'Productos obtenidos');
   } catch (err) {
     next(err);
   }

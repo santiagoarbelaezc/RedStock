@@ -60,6 +60,22 @@ const TransferModel = {
     );
     return TransferModel.getById(transferId);
   },
+
+  delete: async (transferId) => {
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
+      await connection.query('DELETE FROM transfer_items WHERE transfer_id = ?', [transferId]);
+      await connection.query('DELETE FROM transfers WHERE id = ?', [transferId]);
+      await connection.commit();
+      return true;
+    } catch (err) {
+      await connection.rollback();
+      throw err;
+    } finally {
+      connection.release();
+    }
+  },
 };
 
 module.exports = TransferModel;

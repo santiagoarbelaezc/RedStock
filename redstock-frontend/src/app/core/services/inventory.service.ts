@@ -9,12 +9,20 @@ export class InventoryService {
 
   constructor(private http: HttpClient) {}
 
-  getByBranch(branchId: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/${branchId}`);
+  getByBranch(branchId: number, page?: number, limit?: number): Observable<any> {
+    let url = `${this.apiUrl}/${branchId}`;
+    if (page || limit) {
+      url += `?page=${page || 1}&limit=${limit || 10}`;
+    }
+    return this.http.get<any>(url);
   }
 
-  getAllBranches(): Observable<any> {
-    return this.http.get<any>(this.apiUrl);
+  getAllBranches(page?: number, limit?: number): Observable<any> {
+    let url = this.apiUrl;
+    if (page || limit) {
+      url += `?page=${page || 1}&limit=${limit || 10}`;
+    }
+    return this.http.get<any>(url);
   }
 
   updateQuantity(branchId: number, productId: number, quantity: number): Observable<any> {

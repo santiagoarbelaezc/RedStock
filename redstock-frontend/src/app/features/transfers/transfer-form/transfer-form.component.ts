@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule } from '@angular/forms';
 import { NgFor, NgIf } from '@angular/common';
 import { TransferService } from '../../../core/services/transfer.service';
@@ -39,6 +39,7 @@ export class TransferFormComponent implements OnInit {
     private branchService: BranchService,
     private inventoryService: InventoryService,
     private auth: AuthService,
+    private route: ActivatedRoute,
     public router: Router
   ) {
     this.transferForm = this.fb.group({
@@ -48,27 +49,55 @@ export class TransferFormComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.loadBranches();
+    
+    // Auto-completado desde parámetros de URL
+    this.route.queryParams.subscribe(params => {
+      const fromBranchId = params['fromBranchId'];
+      const productId = params['productId'];
+
+      if (fromBranchId) {
+        this.transferForm.patchValue({ originBranchId: fromBranchId });
+        this.loadBranchInventory(fromBranchId, productId);
+      }
+    });
+  }
+
+  loadBranches() {
     this.branchService.getAll().subscribe({
       next: (res: any) => this.branches = res.data || []
+    });
+  }
+
+  loadBranchInventory(branchId: number, preselectProductId?: any) {
+    // Pedimos el inventario de la sucursal origen (un poco más de lo normal para asegurar que el producto esté)
+    this.inventoryService.getByBranch(branchId, 1, 100).subscribe({
+      next: (res: any) => {
+        const inventoryData = res.data?.inventory || res.data || [];
+        this.selectedOriginBranchInventory = inventoryData.filter((i: any) => i.quantity > 0);
+        
+        if (preselectProductId) {
+          this.items.clear();
+          const itemForm = this.fb.group({
+            productId: [+preselectProductId, Validators.required],
+            requestedQty: [1, [Validators.required, Validators.min(1)]]
+          });
+          this.items.push(itemForm);
+        }
+      }
     });
   }
 
   onOriginBranchChange() {
     const originId = this.transferForm.get('originBranchId')?.value;
     if (!originId) return;
-
-    this.items.clear();
-    this.inventoryService.getByBranch(originId).subscribe({
-      next: (res: any) => {
-        this.selectedOriginBranchInventory = (res.data || []).filter((i: any) => i.quantity > 0);
-      }
-    });
+    this.loadBranchInventory(originId);
   }
 
   addItem() {
     const itemForm = this.fb.group({
       productId: ['', Validators.required],
-      quantity: [1, [Validators.required, Validators.min(1)]]
+      requestedQty: [1, [Validators.required, Validators.min(1)]]
     });
     this.items.push(itemForm);
   }

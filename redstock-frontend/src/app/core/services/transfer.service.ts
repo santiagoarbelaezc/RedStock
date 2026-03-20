@@ -24,4 +24,12 @@ export class TransferService {
   updateStatus(transferId: number, status: string): Observable<any> {
     return this.http.put<any>(`${this.apiUrl}/${transferId}/status`, { status });
   }
+
+  getById(transferId: number | string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/detail/${transferId}`);
+  }
+
+  delete(transferId: number | string): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/${transferId}`);
+  }
 }

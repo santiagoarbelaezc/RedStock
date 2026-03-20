@@ -1,0 +1,99 @@
+<div class="max-w-5xl mx-auto space-y-8">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <button (click)="router.navigate(['/transfers'])" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <div>
+        <h1 class="page-title text-2xl font-bold text-gray-900 tracking-tight">Detalle del Traslado</h1>
+        <p class="text-sm text-gray-400 mt-0.5 font-mono text-[10px] font-bold">#{{ transfer?.id }}</p>
+      </div>
+    </div>
+    @if (transfer) {
+      <div class="flex items-center gap-3">
+        @if (transfer.status === 'PENDING') {
+          <button (click)="deleteTransfer()" class="px-4 py-2 bg-red-50 text-red-600 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-red-100 transition-all">Eliminar</button>
+        }
+        <app-badge-status [status]="transfer.status" />
+      </div>
+    }
+  </div>
+
+  @if (loading) {
+    <app-loading-spinner />
+  } @else {
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div class="lg:col-span-2 space-y-6">
+        <div class="card bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="bg-gray-50/50 text-gray-400 font-bold uppercase tracking-widest text-[10px]">
+                  <th class="px-8 py-4 text-left">Producto</th>
+                  <th class="px-8 py-4 text-center">Pedido</th>
+                  <th class="px-8 py-4 text-center">Recibido</th>
+                  <th class="px-8 py-4 text-left">Notas</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-50">
+                @for (item of transfer.items; track item.id) {
+                  <tr>
+                    <td class="px-8 py-4">
+                      <p class="font-bold text-gray-900">{{ item.product_name }}</p>
+                      <p class="text-[10px] text-gray-300 font-mono">{{ item.sku }}</p>
+                    </td>
+                    <td class="px-8 py-4 text-center font-bold text-gray-400">{{ item.requested_qty }}</td>
+                    <td class="px-8 py-4 text-center">
+                       <span class="px-3 py-1 bg-gray-100 rounded-lg font-black text-gray-900">
+                         {{ item.received_qty ?? '—' }}
+                       </span>
+                    </td>
+                    <td class="px-8 py-4 text-xs text-gray-400 italic font-medium">{{ item.notes || 'Sin notas' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-6">
+        <div class="card p-8 bg-gray-900 text-white rounded-[2rem] shadow-2xl relative overflow-hidden">
+           <div class="absolute -top-12 -right-12 w-32 h-32 bg-white/5 rounded-full blur-3xl"></div>
+           <h3 class="text-[10px] font-black uppercase tracking-[0.2em] opacity-30 mb-6">Información Logística</h3>
+           
+           <div class="space-y-6">
+             <div class="flex items-start gap-4">
+                <div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-lg shadow-inner">📤</div>
+                <div>
+                   <p class="text-[10px] opacity-40 uppercase font-bold tracking-widest mb-1">Origen</p>
+                   <p class="text-sm font-bold">{{ transfer.origin_branch_name }}</p>
+                </div>
+             </div>
+
+             <div class="flex items-start gap-4">
+                <div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-lg shadow-inner">📥</div>
+                <div>
+                   <p class="text-[10px] opacity-40 uppercase font-bold tracking-widest mb-1">Destino</p>
+                   <p class="text-sm font-bold">{{ transfer.destination_branch_name }}</p>
+                </div>
+             </div>
+
+             <div class="pt-6 border-t border-white/5 space-y-4">
+                <div class="flex justify-between items-center text-[10px]">
+                   <span class="opacity-40 uppercase font-bold">Solicitado</span>
+                   <span class="font-medium opacity-80">{{ transfer.requested_at | date:'dd MMM, HH:mm' }}</span>
+                </div>
+                @if (transfer.received_at) {
+                  <div class="flex justify-between items-center text-[10px]">
+                     <span class="opacity-40 uppercase font-bold">Recibido</span>
+                     <span class="font-medium opacity-80">{{ transfer.received_at | date:'dd MMM, HH:mm' }}</span>
+                  </div>
+                }
+             </div>
+           </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

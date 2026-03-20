@@ -2,21 +2,32 @@ const pool = require('../config/db');
 
 const InventoryModel = {
   // Inventario de una sucursal con datos del producto
-  getByBranch: async (branchId) => {
+  getByBranch: async (branchId, page = 1, limit = 10) => {
+    const offset = (page - 1) * limit;
     const [rows] = await pool.query(
       `SELECT i.id, i.branch_id, i.product_id, i.quantity, i.updated_at,
               p.name AS product_name, p.sku, p.description
        FROM inventory i
        JOIN products p ON p.id = i.product_id
        WHERE i.branch_id = ?
-       ORDER BY p.name`,
-      [branchId]
+       ORDER BY p.name
+       LIMIT ? OFFSET ?`,
+      [branchId, parseInt(limit), parseInt(offset)]
     );
     return rows;
   },
 
+  countTotalByBranch: async (branchId) => {
+    const [rows] = await pool.query(
+      'SELECT COUNT(*) as total FROM inventory WHERE branch_id = ?',
+      [branchId]
+    );
+    return rows[0].total;
+  },
+
   // Inventario de todas las sucursales
-  getAllBranches: async () => {
+  getAllBranches: async (page = 1, limit = 10) => {
+    const offset = (page - 1) * limit;
     const [rows] = await pool.query(
       `SELECT i.id, i.branch_id, i.product_id, i.quantity, i.updated_at,
               b.name AS branch_name, b.address,
@@ -24,9 +35,16 @@ const InventoryModel = {
        FROM inventory i
        JOIN branches b ON b.id = i.branch_id
        JOIN products p ON p.id = i.product_id
-       ORDER BY b.name, p.name`
+       ORDER BY b.name, p.name
+       LIMIT ? OFFSET ?`,
+      [parseInt(limit), parseInt(offset)]
     );
     return rows;
+  },
+
+  countTotalAll: async () => {
+    const [rows] = await pool.query('SELECT COUNT(*) as total FROM inventory');
+    return rows[0].total;
   },
 
   getByBranchAndProduct: async (branchId, productId) => {

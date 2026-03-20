@@ -18,7 +18,10 @@ const UserModel = {
 
   getByEmail: async (email) => {
     const [rows] = await pool.query(
-      'SELECT * FROM users WHERE email = ?',
+      `SELECT u.*, b.name as branch_name 
+       FROM users u
+       LEFT JOIN branches b ON u.branch_id = b.id
+       WHERE u.email = ?`,
       [email]
     );
     return rows[0] || null;

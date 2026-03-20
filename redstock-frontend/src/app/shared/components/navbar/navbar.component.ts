@@ -1,5 +1,6 @@
-import { Component, Output, EventEmitter } from '@angular/core';
+import { Component, Output, EventEmitter, OnInit } from '@angular/core';
 import { AuthService } from '../../../core/services/auth.service';
+import { BranchService } from '../../../core/services/branch.service';
 
 @Component({
   selector: 'app-navbar',
@@ -7,10 +8,29 @@ import { AuthService } from '../../../core/services/auth.service';
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.css'
 })
-export class NavbarComponent {
+export class NavbarComponent implements OnInit {
   @Output() toggleSidebar = new EventEmitter<void>();
 
-  constructor(private auth: AuthService) {}
+  constructor(
+    private auth: AuthService,
+    private branchService: BranchService
+  ) {}
+
+  ngOnInit() {
+    const user = this.auth.getCurrentUser();
+    const bid = user?.branch_id || user?.branchId;
+    
+    if (user && bid && !user.branch_name) {
+      this.branchService.getById(bid).subscribe({
+        next: (res: any) => {
+          if (res.data?.name) {
+            user.branch_name = res.data.name;
+            localStorage.setItem('user', JSON.stringify(user));
+          }
+        }
+      });
+    }
+  }
 
   get userName() { 
     return this.auth.getCurrentUser()?.name || 'Usuario'; 

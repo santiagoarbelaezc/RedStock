@@ -21,7 +21,8 @@ const create = async (req, res, next) => {
     // Crear ítems del traslado
     const createdItems = [];
     for (const item of items) {
-      const ti = await TransferItemModel.create(transfer.id, item.productId, item.requestedQty);
+      const qty = item.requestedQty || item.quantity;
+      const ti = await TransferItemModel.create(transfer.id, item.productId, qty);
       createdItems.push(ti);
     }
 
@@ -57,6 +58,15 @@ const updateStatus = async (req, res, next) => {
     if (!transfer) return errorResponse(res, 'Traslado no encontrado', 404);
 
     const receivedAt = ['RECEIVED', 'PARTIAL'].includes(status) ? new Date() : null;
+
+    // Si pasa a IN_TRANSIT, restamos del origen
+    if (status === 'IN_TRANSIT' && transfer.status === 'PENDING') {
+      const items = await TransferItemModel.getByTransfer(transferId);
+      for (const item of items) {
+        await InventoryModel.upsert(transfer.origin_branch_id, item.product_id, -item.requested_qty);
+      }
+    }
+
     const updated = await TransferModel.updateStatus(transferId, status, receivedAt);
     
     console.log(`[TRANSFER] Estado actualizado: ID ${transferId} -> ${status} (por ${req.user.email})`);
@@ -102,4 +112,38 @@ const confirmReception = async (req, res, next) => {
   }
 };
 
-module.exports = { create, getByBranch, updateStatus, confirmReception };
+// DELETE /api/transfers/:transferId — eliminar solicitud (solo si es PENDING)
+const deleteTransfer = async (req, res, next) => {
+  try {
+    const { transferId } = req.params;
+    const transfer = await TransferModel.getById(transferId);
+
+    if (!transfer) return errorResponse(res, 'Traslado no encontrado', 404);
+    if (transfer.status !== 'PENDING') {
+      return errorResponse(res, 'Solo se pueden eliminar traslados con estado PENDING', 400);
+    }
+
+    await TransferModel.delete(transferId);
+    console.log(`[TRANSFER] Solicitud eliminada: ID ${transferId} (por ${req.user.email})`);
+
+    return successResponse(res, null, 'Traslado eliminado correctamente');
+  } catch (err) {
+    console.error(`[TRANSFER] Error eliminando traslado: ${err.message}`);
+    next(err);
+  }
+};
+
+const getById = async (req, res, next) => {
+  try {
+    const { transferId } = req.params;
+    const transfer = await TransferModel.getById(transferId);
+    if (!transfer) return errorResponse(res, 'Traslado no encontrado', 404);
+    
+    const items = await TransferItemModel.getByTransfer(transferId);
+    return successResponse(res, { ...transfer, items }, 'Detalle del traslado');
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { create, getByBranch, updateStatus, confirmReception, deleteTransfer, getById };

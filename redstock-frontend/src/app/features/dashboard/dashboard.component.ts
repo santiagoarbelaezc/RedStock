@@ -10,12 +10,13 @@ import { StatCardComponent } from '../../shared/components/stat-card/stat-card.c
 import { BadgeStatusComponent } from '../../shared/components/badge-status/badge-status.component';
 import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
 import { ColorPickerComponent } from '../../shared/components/color-picker/color-picker.component';
+import { SafeHtmlPipe } from '../../shared/pipes/safe-html.pipe';
 import { ICONS } from '../../shared/constants/icons.constant';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [RouterLink, NgFor, DecimalPipe, DatePipe, CurrencyPipe, StatCardComponent, BadgeStatusComponent, LoadingSpinnerComponent, ColorPickerComponent],
+  imports: [RouterLink, NgFor, DecimalPipe, DatePipe, CurrencyPipe, StatCardComponent, BadgeStatusComponent, LoadingSpinnerComponent, ColorPickerComponent, SafeHtmlPipe],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
@@ -46,14 +47,15 @@ export class DashboardComponent implements OnInit {
     const bid = this.branchId;
     
     forkJoin({
-      inventory: this.inventory.getByBranch(bid),
+      inventory: this.inventory.getByBranch(bid, 1, 1000),
       analytics: this.analytics.getSalesByMonth(bid),
       transfers: this.transfers.getByBranch(bid)
     }).subscribe({
       next: (results: any) => {
         // Process inventory
-        const inv = results.inventory?.data || [];
-        this.stats.totalProducts = inv.length;
+        const invData = results.inventory?.data;
+        const inv = invData?.inventory || invData || [];
+        this.stats.totalProducts = invData?.pagination?.total || inv.length;
         this.stats.inStock = inv.filter((i: any) => i.quantity > 0).length;
 
         // Process analytics

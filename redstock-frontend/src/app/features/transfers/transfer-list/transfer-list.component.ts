@@ -29,6 +29,11 @@ export class TransferListComponent implements OnInit {
   constructor(private transferService: TransferService, private auth: AuthService) {}
 
   ngOnInit() {
+    this.loadTransfers();
+  }
+
+  loadTransfers() {
+    this.loading = true;
     this.transferService.getByBranch(this.myBranchId).subscribe({
       next: (res: any) => { 
         this.transfers = res.data || []; 
@@ -37,6 +42,24 @@ export class TransferListComponent implements OnInit {
       error: () => { 
         this.loading = false; 
       }
+    });
+  }
+
+  deleteTransfer(id: number) {
+    if (!confirm('¿Estás seguro de que deseas eliminar esta solicitud de traslado?')) return;
+    
+    this.transferService.delete(id).subscribe({
+      next: () => this.loadTransfers(),
+      error: (err) => alert(err.error?.message || 'Error al eliminar')
+    });
+  }
+
+  sendTransfer(id: number) {
+    if (!confirm('¿Marcar este traslado como DESPACHADO? Los productos saldrán hacia el destino.')) return;
+    
+    this.transferService.updateStatus(id, 'IN_TRANSIT').subscribe({
+      next: () => this.loadTransfers(),
+      error: (err) => alert(err.error?.message || 'Error al actualizar')
     });
   }
 }

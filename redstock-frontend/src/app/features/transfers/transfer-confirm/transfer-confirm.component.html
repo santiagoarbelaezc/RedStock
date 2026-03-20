@@ -1,54 +1,96 @@
-<div class="max-w-2xl mx-auto space-y-8">
-  <div class="text-center">
-    <div class="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-black text-white text-3xl mb-4 shadow-xl">✓</div>
-    <h1 class="page-title text-2xl font-bold text-gray-900 tracking-tight">Confirmar Recepción</h1>
-    <p class="text-sm text-gray-400 mt-1">Verifica los productos recibidos en el traslado #{{ transferId }}</p>
+<div class="max-w-4xl mx-auto space-y-8">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="page-title text-2xl font-bold text-gray-900 tracking-tight">Confirmar Recepción</h1>
+      <p class="text-sm text-gray-400 mt-0.5">Verifica los productos recibidos para completar el traslado #{{ transfer?.id }}</p>
+    </div>
+    @if (transfer) {
+      <app-badge-status [status]="transfer.status" />
+    }
   </div>
 
   @if (loading) {
     <app-loading-spinner />
   } @else {
-    <div class="card p-8 bg-white border border-gray-100 rounded-3xl shadow-sm">
-      <div class="flex items-center justify-between mb-8 pb-4 border-b border-gray-50">
-        <div>
-           <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Sucursal Origen</p>
-           <p class="text-sm font-bold text-gray-900">{{ transfer?.origin_branch_name }}</p>
-        </div>
-        <div class="text-right">
-           <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Fecha Envío</p>
-           <p class="text-sm font-bold text-gray-900">{{ transfer?.requested_at | date:'dd/MM/yyyy' }}</p>
-        </div>
-      </div>
-
-      <div class="space-y-4">
-        @for (item of items; track item.id) {
-          <div class="p-6 bg-gray-50/50 rounded-2xl border border-gray-50 flex flex-col md:flex-row items-center gap-6">
-            <div class="flex-1">
-              <h4 class="font-bold text-gray-900">{{ item.product_name }}</h4>
-              <p class="text-[10px] text-gray-400 font-mono uppercase tracking-widest">Enviado: {{ item.requested_quantity }} unidades</p>
-            </div>
-            <div class="w-full md:w-40">
-              <label class="block text-[10px] font-bold text-gray-900 uppercase tracking-tighter mb-1">Recibido:</label>
-              <input type="number" 
-                     [(ngModel)]="item._receivedQty" 
-                     class="w-full px-4 py-2 bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-black outline-none transition-all text-sm font-black text-center"
-                     [class.text-red-600]="item._receivedQty < item.requested_quantity"
-                     [class.text-green-600]="item._receivedQty >= item.requested_quantity">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="md:col-span-2 space-y-6">
+        <form [formGroup]="confirmForm" (ngSubmit)="onSubmit()" class="space-y-6">
+          <div class="card p-0 bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="bg-gray-50/50 text-gray-400 font-bold uppercase tracking-widest text-[10px]">
+                    <th class="px-6 py-4 text-left">Producto</th>
+                    <th class="px-6 py-4 text-center">Solicitado</th>
+                    <th class="px-6 py-4 text-center">Recibido</th>
+                    <th class="px-6 py-4 text-left">Notas / Faltantes</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50" formArrayName="items">
+                  @for (item of items.controls; track $index) {
+                    <tr [formGroupName]="$index" class="hover:bg-gray-50/50 transition-colors">
+                      <td class="px-6 py-4">
+                        <p class="font-bold text-gray-900">{{ item.get('productName')?.value }}</p>
+                        <p class="text-[10px] text-gray-300 font-mono">{{ item.get('sku')?.value }}</p>
+                      </td>
+                      <td class="px-6 py-4 text-center font-bold text-gray-400">
+                        {{ item.get('requestedQty')?.value }}
+                      </td>
+                      <td class="px-6 py-4">
+                        <input type="number" formControlName="receivedQty" 
+                               class="w-20 mx-auto px-2 py-1.5 bg-gray-50 border border-gray-100 rounded-lg text-center font-black focus:ring-2 focus:ring-black outline-none transition-all">
+                      </td>
+                      <td class="px-6 py-4">
+                        <input type="text" formControlName="notes" placeholder="Ej: Llegó roto..."
+                               class="w-full px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-lg text-xs focus:ring-2 focus:ring-black outline-none transition-all">
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
             </div>
           </div>
-        }
+
+          <div class="flex items-center gap-4">
+            <button type="submit" 
+                    [disabled]="confirmForm.invalid || submitting"
+                    class="flex-1 py-4 bg-black text-white rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-gray-800 disabled:opacity-50 transition-all shadow-xl shadow-gray-200 uppercase">
+              {{ submitting ? 'Confirmando...' : 'Finalizar y Actualizar Inventario' }}
+            </button>
+            <button type="button" 
+                    (click)="router.navigate(['/transfers'])" 
+                    class="px-8 py-4 bg-white border border-gray-100 text-gray-900 rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-gray-50 transition-all">
+              Cancelar
+            </button>
+          </div>
+        </form>
       </div>
 
-       <div class="flex items-center gap-4 mt-10">
-         <button (click)="onConfirm()" 
-                 [disabled]="loadingConfirm" 
-                 class="flex-1 py-4 bg-black text-white rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-gray-800 disabled:opacity-50 transition-all">
-           {{ loadingConfirm ? 'Procesando...' : 'Confirmar Recepción' }}
-         </button>
-         <button (click)="router.navigate(['/transfers'])" 
-                 class="px-8 py-4 bg-white border border-gray-100 text-gray-900 rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-gray-50 transition-all">
-           Cancelar
-         </button>
+      <div class="space-y-6">
+        <div class="card p-6 bg-black text-white rounded-3xl shadow-xl">
+          <h3 class="text-[10px] font-black uppercase tracking-widest opacity-50 mb-4">Detalle del Traslado</h3>
+          <div class="space-y-4">
+            <div>
+              <p class="text-[10px] opacity-40 uppercase font-bold">Desde (Origen)</p>
+              <p class="text-sm font-bold">{{ transfer.origin_branch_name }}</p>
+            </div>
+            <div>
+              <p class="text-[10px] opacity-40 uppercase font-bold">Hacia (Destino)</p>
+              <p class="text-sm font-bold">{{ transfer.destination_branch_name }}</p>
+            </div>
+            <div class="pt-4 border-t border-white/10">
+              <p class="text-[10px] opacity-40 uppercase font-bold">Fecha de Solicitud</p>
+              <p class="text-xs font-medium">{{ transfer.requested_at | date:'dd MMMM, yyyy HH:mm' }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-6 bg-orange-50 border border-orange-100 rounded-3xl">
+          <p class="text-[10px] text-orange-600 font-black uppercase tracking-widest mb-2">Importante</p>
+          <p class="text-xs text-orange-600 font-medium leading-relaxed">
+            Al confirmar la recepción, el inventario de tu sucursal se incrementará automáticamente según las cantidades indicadas como <strong>recibidas</strong>.
+          </p>
+        </div>
       </div>
     </div>
   }

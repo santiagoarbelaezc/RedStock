@@ -24,6 +24,11 @@ export class InventoryListComponent implements OnInit {
   selectedBranchId: number | string = '';
   loading = true;
   protected icons = ICONS;
+  // Paginación
+  currentPage = 1;
+  pageSize = 10;
+  totalPages = 0;
+  totalItems = 0;
 
   get myBranchId() { 
     const u = this.auth.getCurrentUser();
@@ -43,15 +48,30 @@ export class InventoryListComponent implements OnInit {
     this.loadInventory();
   }
 
+  onBranchChange() {
+    this.currentPage = 1;
+    this.loadInventory();
+  }
+
+  onPageChange(page: number) {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.loadInventory();
+    }
+  }
+
   loadInventory() {
     this.loading = true;
     const req$ = this.selectedBranchId
-      ? this.inventoryService.getByBranch(+this.selectedBranchId)
-      : this.inventoryService.getAllBranches();
+      ? this.inventoryService.getByBranch(+this.selectedBranchId, this.currentPage, this.pageSize)
+      : this.inventoryService.getAllBranches(this.currentPage, this.pageSize);
     
     req$.subscribe({
       next: (res: any) => { 
-        this.inventory = res.data || []; 
+        const data = res.data || {};
+        this.inventory = data.inventory || []; 
+        this.totalItems = data.pagination?.total || 0;
+        this.totalPages = data.pagination?.totalPages || 0;
         this.loading = false; 
       },
       error: () => { 

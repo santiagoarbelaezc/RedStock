@@ -12,35 +12,82 @@
     </a>
   </div>
 
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+    <div class="relative">
+      <input type="text" [(ngModel)]="searchTerm" (input)="onSearch()" placeholder="Buscar por nombre o SKU..." 
+             class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-black transition-all">
+      <div class="absolute left-3 top-2.5 text-gray-400" [innerHTML]="icons.search | safeHtml"></div>
+    </div>
+    
+    <select [(ngModel)]="selectedBranchId" (change)="onBranchChange()" 
+            class="w-full px-4 py-2.5 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-black transition-all">
+      <option value="">Todas las sucursales</option>
+      @for (b of branches; track b.id) {
+        <option [value]="b.id">{{ b.name }}</option>
+      }
+    </select>
+  </div>
+
   @if (loading) {
     <app-loading-spinner />
   } @else if (products.length === 0) {
-    <app-empty-state icon="🧪" title="Sin productos" message="Aún no has registrado productos en el catálogo. Comienza creando uno nuevo." actionLabel="Registrar Producto" (action)="router.navigate(['/products/new'])" />
+    <app-empty-state [icon]="searchTerm || selectedBranchId ? icons.products : icons.dashboard" 
+                    [title]="searchTerm || selectedBranchId ? 'Sin resultados' : 'Sin productos'" 
+                    [message]="searchTerm || selectedBranchId ? 'No encontramos productos que coincidan con tus filtros.' : 'Aún no has registrado productos en el catálogo.'" 
+                    [actionLabel]="searchTerm || selectedBranchId ? 'Limpiar Filtros' : 'Registrar Producto'" 
+                    (action)="handleEmptyStateAction()" />
   } @else {
-    <div class="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead>
-            <tr class="bg-gray-50/50 text-gray-400 font-bold uppercase tracking-widest text-[10px]">
-              <th class="px-8 py-4 text-left">Producto</th>
-              <th class="px-8 py-4 text-left">SKU / Código</th>
-              <th class="px-8 py-4 text-left">Descripción</th>
-              <th class="px-8 py-4 text-left">Registrado</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-50">
-            @for (p of products; track p.id) {
-              <tr class="hover:bg-gray-50/50 transition-colors">
-                <td class="px-8 py-4">
-                  <span class="font-bold text-gray-900">{{ p.name }}</span>
-                </td>
-                <td class="px-8 py-4 text-gray-300 font-mono text-[10px] font-bold uppercase tracking-wider">{{ p.sku }}</td>
-                <td class="px-8 py-4 text-gray-500 max-w-xs truncate">{{ p.description || '—' }}</td>
-                <td class="px-8 py-4 text-xs text-gray-400 font-medium">{{ p.created_at | date:'dd/MM/yyyy' }}</td>
+    <div class="space-y-4">
+      <div class="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-gray-50/50 text-gray-400 font-bold uppercase tracking-widest text-[10px]">
+                <th class="px-8 py-4 text-left">Producto</th>
+                <th class="px-8 py-4 text-left">SKU / Código</th>
+                <th class="px-8 py-4 text-left">Descripción</th>
+                <th class="px-8 py-4 text-left">Registrado</th>
               </tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+              @for (p of products; track p.id) {
+                <tr class="hover:bg-gray-50/50 transition-colors cursor-pointer" [routerLink]="['/products', p.id]">
+                  <td class="px-8 py-4">
+                    <span class="font-bold text-gray-900">{{ p.name }}</span>
+                  </td>
+                  <td class="px-8 py-4 text-gray-300 font-mono text-[10px] font-bold uppercase tracking-wider">{{ p.sku }}</td>
+                  <td class="px-8 py-4 text-gray-500 max-w-xs truncate">{{ p.description || '—' }}</td>
+                  <td class="px-8 py-4 text-xs text-gray-400 font-medium">{{ p.created_at | date:'dd/MM/yyyy' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Paginación -->
+      <div class="flex items-center justify-between px-2">
+        <p class="text-xs text-gray-400 font-medium">
+          Mostrando <span class="font-bold text-gray-900">{{ (currentPage-1)*pageSize + 1 }}-{{ (currentPage-1)*pageSize + products.length }}</span> de <span class="font-bold text-gray-900">{{ totalItems }}</span> productos
+        </p>
+        
+        <div class="flex items-center gap-2">
+          <button (click)="onPageChange(currentPage - 1)" [disabled]="currentPage === 1"
+                  class="p-2 rounded-lg border border-gray-100 bg-white text-gray-500 disabled:opacity-30 hover:bg-gray-50 transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          </button>
+          
+          <div class="flex items-center gap-1">
+             <span class="px-3 py-1 bg-black text-white rounded-lg text-xs font-bold">{{ currentPage }}</span>
+             <span class="text-xs text-gray-400 px-1">de</span>
+             <span class="px-3 py-1 bg-white border border-gray-100 text-gray-900 rounded-lg text-xs font-bold">{{ totalPages }}</span>
+          </div>
+
+          <button (click)="onPageChange(currentPage + 1)" [disabled]="currentPage === totalPages"
+                  class="p-2 rounded-lg border border-gray-100 bg-white text-gray-500 disabled:opacity-30 hover:bg-gray-50 transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </button>
+        </div>
       </div>
     </div>
   }

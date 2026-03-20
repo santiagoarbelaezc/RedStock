@@ -4,8 +4,23 @@ const { successResponse, errorResponse } = require('../utils/response.util');
 // GET /api/inventory/:branchId — inventario de una sucursal
 const getByBranch = async (req, res, next) => {
   try {
-    const inventory = await InventoryModel.getByBranch(req.params.branchId);
-    return successResponse(res, inventory, 'Inventario de la sucursal');
+    const { branchId } = req.params;
+    const { page = 1, limit = 10 } = req.query;
+
+    const [inventory, total] = await Promise.all([
+      InventoryModel.getByBranch(branchId, page, limit),
+      InventoryModel.countTotalByBranch(branchId)
+    ]);
+
+    return successResponse(res, {
+      inventory,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(total / limit)
+      }
+    }, 'Inventario de la sucursal');
   } catch (err) {
     next(err);
   }
@@ -14,8 +29,22 @@ const getByBranch = async (req, res, next) => {
 // GET /api/inventory — inventario global de todas las sucursales
 const getAll = async (req, res, next) => {
   try {
-    const inventory = await InventoryModel.getAllBranches();
-    return successResponse(res, inventory, 'Inventario global');
+    const { page = 1, limit = 10 } = req.query;
+
+    const [inventory, total] = await Promise.all([
+      InventoryModel.getAllBranches(page, limit),
+      InventoryModel.countTotalAll()
+    ]);
+
+    return successResponse(res, {
+      inventory,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(total / limit)
+      }
+    }, 'Inventario global');
   } catch (err) {
     next(err);
   }

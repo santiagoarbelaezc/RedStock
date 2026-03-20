@@ -33,6 +33,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/transfers/transfer-form/transfer-form.component').then(m => m.TransferFormComponent)
       },
       {
+        path: 'transfers/:id',
+        loadComponent: () => import('./features/transfers/transfer-detail/transfer-detail.component').then(m => m.TransferDetailComponent)
+      },
+      {
         path: 'transfers/:id/confirm',
         loadComponent: () => import('./features/transfers/transfer-confirm/transfer-confirm.component').then(m => m.TransferConfirmComponent)
       },

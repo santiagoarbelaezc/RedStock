@@ -5,11 +5,11 @@ const { successResponse, errorResponse } = require('../utils/response.util');
 const getByBranch = async (req, res, next) => {
   try {
     const { branchId } = req.params;
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 10, search = '' } = req.query;
 
     const [inventory, total] = await Promise.all([
-      InventoryModel.getByBranch(branchId, page, limit),
-      InventoryModel.countTotalByBranch(branchId)
+      InventoryModel.getByBranch(branchId, page, limit, search),
+      InventoryModel.countTotalByBranch(branchId, search)
     ]);
 
     return successResponse(res, {
@@ -29,11 +29,11 @@ const getByBranch = async (req, res, next) => {
 // GET /api/inventory — inventario global de todas las sucursales
 const getAll = async (req, res, next) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 10, search = '', branchId = null } = req.query;
 
     const [inventory, total] = await Promise.all([
-      InventoryModel.getAllBranches(page, limit),
-      InventoryModel.countTotalAll()
+      InventoryModel.getAllBranches(page, limit, search, branchId),
+      InventoryModel.countTotalAll(search, branchId)
     ]);
 
     return successResponse(res, {

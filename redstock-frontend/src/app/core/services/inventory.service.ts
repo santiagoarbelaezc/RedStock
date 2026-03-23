@@ -9,18 +9,21 @@ export class InventoryService {
 
   constructor(private http: HttpClient) {}
 
-  getByBranch(branchId: number, page?: number, limit?: number): Observable<any> {
-    let url = `${this.apiUrl}/${branchId}`;
-    if (page || limit) {
-      url += `?page=${page || 1}&limit=${limit || 10}`;
+  getByBranch(branchId: number, page?: number, limit?: number, search: string = ''): Observable<any> {
+    let url = `${this.apiUrl}/${branchId}?page=${page || 1}&limit=${limit || 10}`;
+    if (search) {
+      url += `&search=${encodeURIComponent(search)}`;
     }
     return this.http.get<any>(url);
   }
 
-  getAllBranches(page?: number, limit?: number): Observable<any> {
-    let url = this.apiUrl;
-    if (page || limit) {
-      url += `?page=${page || 1}&limit=${limit || 10}`;
+  getAllBranches(page?: number, limit?: number, search: string = '', branchId: string | number = ''): Observable<any> {
+    let url = `${this.apiUrl}?page=${page || 1}&limit=${limit || 10}`;
+    if (search) {
+      url += `&search=${encodeURIComponent(search)}`;
+    }
+    if (branchId) {
+      url += `&branchId=${branchId}`;
     }
     return this.http.get<any>(url);
   }

@@ -22,6 +22,7 @@ export class InventoryListComponent implements OnInit {
   inventory: any[] = [];
   branches: any[] = [];
   selectedBranchId: number | string = '';
+  searchTerm: string = '';
   loading = true;
   protected icons = ICONS;
   // Paginación
@@ -38,7 +39,7 @@ export class InventoryListComponent implements OnInit {
   constructor(
     private inventoryService: InventoryService,
     private branchService: BranchService,
-    private auth: AuthService
+    protected auth: AuthService
   ) {}
 
   ngOnInit() {
@@ -53,6 +54,11 @@ export class InventoryListComponent implements OnInit {
     this.loadInventory();
   }
 
+  onSearch() {
+    this.currentPage = 1;
+    this.loadInventory();
+  }
+
   onPageChange(page: number) {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
@@ -63,8 +69,8 @@ export class InventoryListComponent implements OnInit {
   loadInventory() {
     this.loading = true;
     const req$ = this.selectedBranchId
-      ? this.inventoryService.getByBranch(+this.selectedBranchId, this.currentPage, this.pageSize)
-      : this.inventoryService.getAllBranches(this.currentPage, this.pageSize);
+      ? this.inventoryService.getByBranch(+this.selectedBranchId, this.currentPage, this.pageSize, this.searchTerm)
+      : this.inventoryService.getAllBranches(this.currentPage, this.pageSize, this.searchTerm, '');
     
     req$.subscribe({
       next: (res: any) => { 

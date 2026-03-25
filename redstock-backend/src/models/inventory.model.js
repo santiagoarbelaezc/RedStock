@@ -1,7 +1,7 @@
 const pool = require('../config/db');
+const { getConnection, commit, rollback } = require('../utils/transaction');
 
 const InventoryModel = {
-  // Inventario de una sucursal con datos del producto
   getByBranch: async (branchId, page = 1, limit = 10, search = '') => {
     const offset = (page - 1) * limit;
     let query = `
@@ -38,7 +38,6 @@ const InventoryModel = {
     return rows[0].total;
   },
 
-  // Inventario de todas las sucursales
   getAllBranches: async (page = 1, limit = 10, search = '', branchId = null) => {
     const offset = (page - 1) * limit;
     let query = `
@@ -95,7 +94,6 @@ const InventoryModel = {
     return rows[0] || null;
   },
 
-  // Inserta o actualiza la cantidad (INSERT ON DUPLICATE KEY UPDATE)
   upsert: async (branchId, productId, quantity) => {
     await pool.query(
       `INSERT INTO inventory (branch_id, product_id, quantity)
@@ -106,7 +104,33 @@ const InventoryModel = {
     return InventoryModel.getByBranchAndProduct(branchId, productId);
   },
 
-  // Reemplaza la cantidad existente (ajuste manual)
+  adjustStock: async (branch_id, product_id, quantity) => {
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      throw Object.assign(new Error('La cantidad debe ser mayor a 0 para ajustar stock'), { statusCode: 400 });
+    }
+
+    const conn = await getConnection(pool);
+    try {
+      await conn.execute(
+        `INSERT INTO inventory (branch_id, product_id, quantity) VALUES (?, ?, ?)
+         ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity), updated_at = NOW()`,
+        [branch_id, product_id, quantity]
+      );
+
+      await conn.execute(
+        `INSERT INTO inventory_movements (branch_id, product_id, type, quantity, reference_type) VALUES (?, ?, 'IN', ?, 'replenishment')`,
+        [branch_id, product_id, quantity]
+      );
+
+      await commit(conn);
+      return InventoryModel.getByBranchAndProduct(branch_id, product_id);
+    } catch (err) {
+      await rollback(conn);
+      throw err;
+    }
+  },
+
+  // Retenido para compatibilidad
   updateQuantity: async (branchId, productId, quantity) => {
     await pool.query(
       `INSERT INTO inventory (branch_id, product_id, quantity)

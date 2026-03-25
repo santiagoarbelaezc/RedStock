@@ -1,40 +1,39 @@
 const TransferModel = require('../models/transfer.model');
 const TransferItemModel = require('../models/transferItem.model');
 const InventoryModel = require('../models/inventory.model');
-const { successResponse, errorResponse } = require('../utils/response.util');
+const { successResponse } = require('../utils/response.util');
+const { handleControllerError } = require('../utils/errorHandler');
+const logger = require('../utils/logger');
 
-// POST /api/transfers — crear solicitud de traslado
-const create = async (req, res, next) => {
+const createTransfer = async (req, res) => {
   try {
     const { origin_branch_id, destination_branch_id, items } = req.body;
 
     if (!origin_branch_id || !destination_branch_id || !items || items.length === 0) {
-      return errorResponse(res, 'origin_branch_id, destination_branch_id e items son requeridos', 400);
+      const err = new Error('origin_branch_id, destination_branch_id e items son requeridos');
+      err.statusCode = 400;
+      throw err;
     }
-    if (origin_branch_id === destination_branch_id) {
-      return errorResponse(res, 'El origen y destino no pueden ser la misma sucursal', 400);
-    }
-
-    const transfer = await TransferModel.create(origin_branch_id, destination_branch_id);
-    console.log(`[TRANSFER] Nueva solicitud de traslado: Origen ${origin_branch_id} -> Destino ${destination_branch_id} (por ${req.user.email})`);
-
-    // Crear ítems del traslado
-    const createdItems = [];
-    for (const item of items) {
-      const qty = item.requested_qty || item.requestedQty || item.quantity;
-      const ti = await TransferItemModel.create(transfer.id, item.product_id || item.productId, qty);
-      createdItems.push(ti);
+    
+    // Auth validation
+    if (req.user.role !== 'superadmin' && Number(req.user.branch_id) !== Number(origin_branch_id)) {
+      const err = new Error('No tienes permiso para crear traslados desde esta sucursal');
+      err.statusCode = 403;
+      throw err;
     }
 
-    return successResponse(res, { ...transfer, items: createdItems }, 'Traslado solicitado', 201);
+    const transfer = await TransferModel.createTransfer({ origin_branch_id, destination_branch_id, items });
+    logger.info(`Nueva solicitud de traslado: Origen ${origin_branch_id} -> Destino ${destination_branch_id} (por ${req.user.email})`);
+
+    const createdItems = await TransferItemModel.getByTransfer(transfer.id);
+
+    return successResponse(res, { ...transfer, items: createdItems }, 'Traslado creado', 201);
   } catch (err) {
-    console.error(`[TRANSFER] Error creando traslado: ${err.message}`);
-    next(err);
+    return handleControllerError(res, err);
   }
 };
 
-// GET /api/transfers/:branchId — traslados de una sucursal (paginado)
-const getByBranch = async (req, res, next) => {
+const getByBranch = async (req, res) => {
   try {
     const { branchId } = req.params;
     const page = parseInt(req.query.page) || 1;
@@ -56,111 +55,99 @@ const getByBranch = async (req, res, next) => {
       }
     }, 'Traslados obtenidos con éxito');
   } catch (err) {
-    next(err);
+    return handleControllerError(res, err);
   }
 };
 
-// PUT /api/transfers/:transferId/status — actualizar estado (ej: IN_TRANSIT)
-const updateStatus = async (req, res, next) => {
+const updateStatus = async (req, res) => {
   try {
     const { transferId } = req.params;
     const { status } = req.body;
 
-    const validStatuses = ['PENDING', 'IN_TRANSIT', 'RECEIVED', 'PARTIAL'];
-    if (!validStatuses.includes(status)) {
-      return errorResponse(res, `Estado inválido. Valores permitidos: ${validStatuses.join(', ')}`, 400);
+    if (status !== 'IN_TRANSIT') {
+      const err = new Error('Este endpoint solo se utiliza para transicionar a IN_TRANSIT');
+      err.statusCode = 400;
+      throw err;
     }
 
-    const transfer = await TransferModel.getById(transferId);
-    if (!transfer) return errorResponse(res, 'Traslado no encontrado', 404);
-
-    const receivedAt = ['RECEIVED', 'PARTIAL'].includes(status) ? new Date() : null;
-
-    // Si pasa a IN_TRANSIT, restamos del origen
-    if (status === 'IN_TRANSIT' && transfer.status === 'PENDING') {
-      const items = await TransferItemModel.getByTransfer(transferId);
-      for (const item of items) {
-        await InventoryModel.upsert(transfer.origin_branch_id, item.product_id, -item.requested_qty);
-      }
-    }
-
-    const updated = await TransferModel.updateStatus(transferId, status, receivedAt);
-    
-    console.log(`[TRANSFER] Estado actualizado: ID ${transferId} -> ${status} (por ${req.user.email})`);
+    const updated = await TransferModel.updateStatusToInTransit(transferId, req.user);
+    logger.info(`Estado actualizado: ID ${transferId} -> IN_TRANSIT (por ${req.user.email})`);
 
     return successResponse(res, updated, 'Estado actualizado');
   } catch (err) {
-    console.error(`[TRANSFER] Error actualizando estado: ${err.message}`);
-    next(err);
+    return handleControllerError(res, err);
   }
 };
 
-// POST /api/transfers/:transferId/confirm — confirmar recepción ítem por ítem
-const confirmReception = async (req, res, next) => {
+const confirmReception = async (req, res) => {
   try {
     const { transferId } = req.params;
-    const { items } = req.body; // [{ itemId, receivedQty, notes }]
+    const { received_items } = req.body;
 
-    const transfer = await TransferModel.getById(transferId);
-    if (!transfer) return errorResponse(res, 'Traslado no encontrado', 404);
-
-    // Confirmar cada ítem y actualizar inventario del destino
-    const confirmedItems = [];
-    for (const item of items) {
-      const confirmed = await TransferItemModel.confirmReception(item.itemId, item.receivedQty, item.notes);
-      if (confirmed && item.receivedQty > 0) {
-        await InventoryModel.upsert(transfer.destination_branch_id, confirmed.product_id, item.receivedQty);
-      }
-      confirmedItems.push(confirmed);
+    if (!Array.isArray(received_items) || received_items.length === 0) {
+      const err = new Error('Se requiere el array de received_items para confirmar la recepción');
+      err.statusCode = 400;
+      throw err;
     }
 
-    // Determinar si fue completo o con faltantes
-    const allItems = await TransferItemModel.getByTransfer(transferId);
-    const hasPartial = allItems.some(i => i.received_qty < i.requested_qty);
-    const newStatus = hasPartial ? 'PARTIAL' : 'RECEIVED';
-    await TransferModel.updateStatus(transferId, newStatus, new Date());
+    const updated = await TransferModel.confirmReception(transferId, received_items, req.user);
+    logger.info(`Recepción confirmada: ID ${transferId} -> Finalizado como ${updated.status} (por ${req.user.email})`);
 
-    console.log(`[TRANSFER] Recepción confirmada: ID ${transferId} -> Finalizado como ${newStatus} (por ${req.user.email})`);
-
-    return successResponse(res, { status: newStatus, items: confirmedItems }, 'Recepción confirmada');
+    return successResponse(res, updated, 'Recepción confirmada');
   } catch (err) {
-    console.error(`[TRANSFER] Error confirmando recepción: ${err.message}`);
-    next(err);
+    return handleControllerError(res, err);
   }
 };
 
-// DELETE /api/transfers/:transferId — eliminar solicitud (solo si es PENDING)
-const deleteTransfer = async (req, res, next) => {
+const deleteTransfer = async (req, res) => {
   try {
     const { transferId } = req.params;
     const transfer = await TransferModel.getById(transferId);
 
-    if (!transfer) return errorResponse(res, 'Traslado no encontrado', 404);
+    if (!transfer) {
+      const err = new Error('Traslado no encontrado');
+      err.statusCode = 404;
+      throw err;
+    }
     if (transfer.status !== 'PENDING') {
-      return errorResponse(res, 'Solo se pueden eliminar traslados con estado PENDING', 400);
+      const err = new Error('Solo se pueden eliminar traslados con estado PENDING');
+      err.statusCode = 400;
+      throw err;
     }
 
     await TransferModel.delete(transferId);
-    console.log(`[TRANSFER] Solicitud eliminada: ID ${transferId} (por ${req.user.email})`);
+    logger.info(`Solicitud eliminada: ID ${transferId} (por ${req.user.email})`);
 
     return successResponse(res, null, 'Traslado eliminado correctamente');
   } catch (err) {
-    console.error(`[TRANSFER] Error eliminando traslado: ${err.message}`);
-    next(err);
+    return handleControllerError(res, err);
   }
 };
 
-const getById = async (req, res, next) => {
+const getById = async (req, res) => {
   try {
     const { transferId } = req.params;
     const transfer = await TransferModel.getById(transferId);
-    if (!transfer) return errorResponse(res, 'Traslado no encontrado', 404);
+    if (!transfer) {
+      const err = new Error('Traslado no encontrado');
+      err.statusCode = 404;
+      throw err;
+    }
     
     const items = await TransferItemModel.getByTransfer(transferId);
     return successResponse(res, { ...transfer, items }, 'Detalle del traslado');
   } catch (err) {
-    next(err);
+    return handleControllerError(res, err);
   }
 };
 
-module.exports = { create, getByBranch, updateStatus, confirmReception, deleteTransfer, getById };
+const getTransfers = async (req, res) => {
+  try {
+    const transfers = await TransferModel.getAll();
+    return successResponse(res, transfers, 'Traslados obtenidos con éxito');
+  } catch (err) {
+    return handleControllerError(res, err);
+  }
+}
+
+module.exports = { createTransfer, getByBranch, updateStatus, confirmReception, deleteTransfer, getById, getTransfers };

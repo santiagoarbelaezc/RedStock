@@ -1,9 +1,9 @@
 const InventoryMovementModel = require('../models/inventoryMovement.model');
 const InventoryModel = require('../models/inventory.model');
-const { successResponse, errorResponse } = require('../utils/response.util');
+const { successResponse } = require('../utils/response.util');
+const { handleControllerError } = require('../utils/errorHandler');
 
 const InventoryMovementController = {
-  // GET /api/movements
   getAll: async (req, res) => {
     try {
       const { page = 1, limit = 10 } = req.query;
@@ -22,11 +22,10 @@ const InventoryMovementController = {
         }
       }, 'Movimientos obtenidos correctamente');
     } catch (error) {
-      return errorResponse(res, error.message);
+      return handleControllerError(res, error);
     }
   },
 
-  // GET /api/movements/branch/:branchId
   getByBranch: async (req, res) => {
     try {
       const { branchId } = req.params;
@@ -47,68 +46,78 @@ const InventoryMovementController = {
         }
       }, `Movimientos de la sucursal ${branchId} obtenidos`);
     } catch (error) {
-      return errorResponse(res, error.message);
+      return handleControllerError(res, error);
     }
   },
 
-  // GET /api/movements/:id
   getById: async (req, res) => {
     try {
       const { id } = req.params;
       const movement = await InventoryMovementModel.getById(id);
-      if (!movement) return errorResponse(res, 'Movimiento no encontrado', 404);
+      if (!movement) {
+        const err = new Error('Movimiento no encontrado');
+        err.statusCode = 404;
+        throw err;
+      }
       return successResponse(res, movement, 'Detalles del movimiento');
     } catch (error) {
-      return errorResponse(res, error.message);
+      return handleControllerError(res, error);
     }
   },
 
-  // POST /api/movements
   create: async (req, res) => {
     try {
       const { branchId, productId, type, quantity, referenceId, referenceType } = req.body;
 
-      // 1. Validaciones básicas
       if (!branchId || !productId || !type || !quantity) {
-        return errorResponse(res, 'Faltan campos obligatorios: branchId, productId, type, quantity', 400);
+        const err = new Error('Faltan campos obligatorios: branchId, productId, type, quantity');
+        err.statusCode = 400;
+        throw err;
       }
 
       const validTypes = ['IN', 'OUT', 'TRANSFER_IN', 'TRANSFER_OUT'];
       if (!validTypes.includes(type)) {
-        return errorResponse(res, 'Tipo de movimiento inválido (IN, OUT, TRANSFER_IN, TRANSFER_OUT)', 400);
+        const err = new Error('Tipo de movimiento inválido (IN, OUT, TRANSFER_IN, TRANSFER_OUT)');
+        err.statusCode = 400;
+        throw err;
       }
 
       if (quantity <= 0) {
-        return errorResponse(res, 'La cantidad debe ser mayor a 0', 400);
+        const err = new Error('La cantidad debe ser mayor a 0');
+        err.statusCode = 400;
+        throw err;
       }
 
-      // 2. Validar stock si es salida
       if (type === 'OUT' || type === 'TRANSFER_OUT') {
         const inv = await InventoryModel.getByBranchAndProduct(branchId, productId);
         if (!inv || inv.quantity < quantity) {
-          return errorResponse(res, `Stock insuficiente para realizar la salida. Disponible: ${inv ? inv.quantity : 0}`, 400);
+          const err = new Error(`Stock insuficiente para realizar la salida. Disponible: ${inv ? inv.quantity : 0}`);
+          err.statusCode = 400;
+          throw err;
         }
       }
 
-      // 3. Crear movimiento
       const newMovement = await InventoryMovementModel.create(
         branchId, productId, type, quantity, referenceId, referenceType
       );
       return successResponse(res, newMovement, 'Movimiento registrado exitosamente', 201);
     } catch (error) {
-      return errorResponse(res, error.message);
+      return handleControllerError(res, error);
     }
   },
 
-  // DELETE /api/movements/:id
   delete: async (req, res) => {
     try {
       const { id } = req.params;
       const deleted = await InventoryMovementModel.delete(id);
-      if (!deleted) return errorResponse(res, 'No se pudo eliminar el movimiento o no existe', 404);
+      if (!deleted) {
+        const err = new Error('No se pudo eliminar el movimiento o no existe');
+        err.statusCode = 404;
+        throw err;
+      }
       return successResponse(res, null, 'Movimiento eliminado correctamente');
     } catch (error) {
-      return errorResponse(res, error.message);
+      return handleControllerError(res, error);
     }
   }
 };

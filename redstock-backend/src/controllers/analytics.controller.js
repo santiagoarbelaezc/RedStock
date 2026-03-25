@@ -2,7 +2,8 @@ const SaleModel = require('../models/sale.model');
 const InventoryModel = require('../models/inventory.model');
 const InventoryMovementModel = require('../models/inventoryMovement.model');
 const pool = require('../config/db');
-const { successResponse, errorResponse } = require('../utils/response.util');
+const { successResponse } = require('../utils/response.util');
+const { handleControllerError } = require('../utils/errorHandler');
 
 // GET /api/analytics/:branchId/sales/current-month
 const getCurrentMonthSales = async (req, res, next) => {
@@ -53,7 +54,7 @@ const getCurrentMonthSales = async (req, res, next) => {
       promedio_diario: avgDaily
     });
   } catch (err) {
-    next(err);
+    return handleControllerError(res, err);
   }
 };
 
@@ -85,7 +86,7 @@ const getSalesComparison = async (req, res, next) => {
 
     return successResponse(res, dataWithVariation);
   } catch (err) {
-    next(err);
+    return handleControllerError(res, err);
   }
 };
 
@@ -110,7 +111,7 @@ const getInventoryBehavior = async (req, res, next) => {
 
     return successResponse(res, rows);
   } catch (err) {
-    next(err);
+    return handleControllerError(res, err);
   }
 };
 
@@ -133,7 +134,7 @@ const getLowStock = async (req, res, next) => {
 
     return successResponse(res, rows);
   } catch (err) {
-    next(err);
+    return handleControllerError(res, err);
   }
 };
 
@@ -166,7 +167,7 @@ const getTopSellingProducts = async (req, res, next) => {
 
     return successResponse(res, rows);
   } catch (err) {
-    next(err);
+    return handleControllerError(res, err);
   }
 };
 
@@ -200,7 +201,7 @@ const getTransfersSummary = async (req, res, next) => {
       producto_mas_solicitado: mostRequested[0] || null
     });
   } catch (err) {
-    next(err);
+    return handleControllerError(res, err);
   }
 };
 
@@ -222,7 +223,7 @@ const getGlobalRanking = async (req, res, next) => {
 
     return successResponse(res, rows);
   } catch (err) {
-    next(err);
+    return handleControllerError(res, err);
   }
 };
 
@@ -250,7 +251,7 @@ const getDailySalesCurrentMonth = async (req, res, next) => {
       mes_anterior: previous
     });
   } catch (err) {
-    next(err);
+    return handleControllerError(res, err);
   }
 };
 // GET /api/analytics/global/summary
@@ -293,7 +294,7 @@ const getGlobalSummary = async (req, res, next) => {
       peor_sucursal_mes: worstBranch[0] || null
     });
   } catch (err) {
-    next(err);
+    return handleControllerError(res, err);
   }
 };
 
@@ -317,7 +318,7 @@ const getIncomeByBranch = async (req, res, next) => {
 
     return successResponse(res, rows);
   } catch (err) {
-    next(err);
+    return handleControllerError(res, err);
   }
 };
 
@@ -341,7 +342,7 @@ const getMonthlyComparison = async (req, res, next) => {
     // o un formato que Chart.js maneje bien para múltiples líneas.
     return successResponse(res, rows);
   } catch (err) {
-    next(err);
+    return handleControllerError(res, err);
   }
 };
 
@@ -364,7 +365,7 @@ const getTopProductsGlobal = async (req, res, next) => {
 
     return successResponse(res, rows);
   } catch (err) {
-    next(err);
+    return handleControllerError(res, err);
   }
 };
 
@@ -396,7 +397,7 @@ const getTransfersGlobalSummary = async (req, res, next) => {
       sucursales_mas_activas: mostActive
     });
   } catch (err) {
-    next(err);
+    return handleControllerError(res, err);
   }
 };
 

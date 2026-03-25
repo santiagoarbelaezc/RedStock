@@ -1,48 +1,61 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const UserModel = require('../models/user.model');
-const { successResponse, errorResponse } = require('../utils/response.util');
+const { successResponse } = require('../utils/response.util');
+const { handleControllerError } = require('../utils/errorHandler');
+const logger = require('../utils/logger');
 
-const register = async (req, res, next) => {
+const register = async (req, res) => {
   try {
     const { name, email, password, role, branchId } = req.body;
 
     if (!name || !email || !password || !branchId) {
-      return errorResponse(res, 'Campos requeridos: name, email, password, branchId', 400);
+      const err = new Error('Campos requeridos: name, email, password, branchId');
+      err.statusCode = 400;
+      throw err;
     }
 
     const existing = await UserModel.getByEmail(email);
-    if (existing) return errorResponse(res, 'El email ya está registrado', 409);
+    if (existing) {
+      const err = new Error('El email ya está registrado');
+      err.statusCode = 409;
+      throw err;
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await UserModel.create(name, email, hashedPassword, role, branchId);
-    console.log(`[AUTH] Nuevo usuario registrado: ${email} [${user.role}]`);
+    logger.info(`Nuevo usuario registrado: ${email} [${user.role}]`);
 
     return successResponse(res, user, 'Usuario registrado exitosamente', 201);
   } catch (err) {
-    console.error(`[AUTH] Error en registro: ${err.message}`);
-    next(err);
+    return handleControllerError(res, err);
   }
 };
 
-const login = async (req, res, next) => {
+const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return errorResponse(res, 'Email y contraseña requeridos', 400);
+      const err = new Error('Email y contraseña requeridos');
+      err.statusCode = 400;
+      throw err;
     }
 
     const user = await UserModel.getByEmail(email);
     if (!user) {
-      console.warn(`[AUTH] Intento de login fallido - Email no encontrado: ${email}`);
-      return errorResponse(res, 'Credenciales inválidas', 401);
+      logger.warn(`Intento de login fallido - Email no encontrado: ${email}`);
+      const err = new Error('Credenciales inválidas');
+      err.statusCode = 401;
+      throw err;
     }
 
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
-      console.warn(`[AUTH] Intento de login fallido - Password incorrecto: ${email}`);
-      return errorResponse(res, 'Credenciales inválidas', 401);
+      logger.warn(`Intento de login fallido - Password incorrecto: ${email}`);
+      const err = new Error('Credenciales inválidas');
+      err.statusCode = 401;
+      throw err;
     }
 
     const token = jwt.sign(
@@ -51,7 +64,7 @@ const login = async (req, res, next) => {
       { expiresIn: '8h' }
     );
 
-    console.log(`[AUTH] Login exitoso: ${email} [${user.role}]`);
+    logger.info(`Login exitoso: ${email} [${user.role}]`);
 
     return successResponse(res, {
       token,
@@ -65,7 +78,7 @@ const login = async (req, res, next) => {
       },
     }, 'Login exitoso');
   } catch (err) {
-    next(err);
+    return handleControllerError(res, err);
   }
 };
 

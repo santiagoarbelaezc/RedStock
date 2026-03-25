@@ -1,7 +1,7 @@
 const pool = require('../config/db');
+const { getConnection, commit, rollback } = require('../utils/transaction');
 
 const SaleModel = {
-  // Obtener todas las ventas con JOIN y paginación
   getAll: async (page = 1, limit = 10) => {
     const offset = (page - 1) * limit;
     const [rows] = await pool.query(
@@ -21,7 +21,6 @@ const SaleModel = {
     return rows[0].total;
   },
 
-  // Obtener ventas por sucursal con paginación
   getByBranch: async (branchId, page = 1, limit = 10) => {
     const offset = (page - 1) * limit;
     const [rows] = await pool.query(
@@ -41,7 +40,6 @@ const SaleModel = {
     return rows[0].total;
   },
 
-  // Obtener una venta por ID
   getById: async (id) => {
     const [rows] = await pool.query(
       `SELECT s.*, b.name AS branch_name, p.name AS product_name, p.sku
@@ -54,57 +52,64 @@ const SaleModel = {
     return rows[0];
   },
 
-  // Crear una venta con transacción y actualización de inventario
-  create: async (branchId, productId, quantity, total, saleDate = null) => {
-    const connection = await pool.getConnection();
+  createSale: async ({ branch_id, product_id, quantity, total }) => {
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      throw Object.assign(new Error('La cantidad debe ser un entero positivo'), { statusCode: 400 });
+    }
+    if (isNaN(total) || total <= 0) {
+      throw Object.assign(new Error('El total debe ser un valor monetario positivo'), { statusCode: 400 });
+    }
+
+    const conn = await getConnection(pool);
     try {
-      await connection.beginTransaction();
-
-      // 1. Insertar la venta
-      const [result] = await connection.query(
-        `INSERT INTO sales (branch_id, product_id, quantity, total, sale_date)
-         VALUES (?, ?, ?, ?, ?)`,
-        [branchId, productId, quantity, total, saleDate || new Date()]
+      const [rows] = await conn.execute(
+        'SELECT quantity FROM inventory WHERE branch_id = ? AND product_id = ? FOR UPDATE',
+        [branch_id, product_id]
       );
-
-      const saleId = result.insertId;
-
-      // 2. Actualizar inventario (Restar cantidad)
-      const [invResult] = await connection.query(
-        `UPDATE inventory SET quantity = quantity - ? 
-         WHERE branch_id = ? AND product_id = ?`,
-        [quantity, branchId, productId]
-      );
-
-      if (invResult.affectedRows === 0) {
-        throw new Error('No se pudo encontrar el producto en el inventario de esta sucursal');
+      if (rows.length === 0) {
+        throw Object.assign(
+          new Error('El producto no tiene stock registrado en esta sucursal'),
+          { statusCode: 404 }
+        );
+      }
+      const available = rows[0].quantity;
+      if (available < quantity) {
+        throw Object.assign(
+          new Error(`Stock insuficiente. Disponible: ${available} unidades, solicitado: ${quantity} unidades`),
+          { statusCode: 409 }
+        );
       }
 
-      // 3. Registrar movimiento de inventario (Salida por Venta)
-      await connection.query(
+      const [saleResult] = await conn.execute(
+        'INSERT INTO sales (branch_id, product_id, quantity, total) VALUES (?, ?, ?, ?)',
+        [branch_id, product_id, quantity, total]
+      );
+
+      await conn.execute(
+        'UPDATE inventory SET quantity = quantity - ? WHERE branch_id = ? AND product_id = ?',
+        [quantity, branch_id, product_id]
+      );
+
+      await conn.execute(
         `INSERT INTO inventory_movements 
          (branch_id, product_id, type, quantity, reference_id, reference_type) 
          VALUES (?, ?, 'OUT', ?, ?, 'sale')`,
-        [branchId, productId, quantity, saleId]
+        [branch_id, product_id, quantity, saleResult.insertId]
       );
 
-      await connection.commit();
-      return { id: saleId, branchId, productId, quantity, total, saleDate };
+      await commit(conn);
+      return { id: saleResult.insertId, branchId: branch_id, productId: product_id, quantity, total };
     } catch (err) {
-      await connection.rollback();
+      await rollback(conn);
       throw err;
-    } finally {
-      connection.release();
     }
   },
 
-  // Eliminar una venta
   delete: async (id) => {
     const [result] = await pool.query('DELETE FROM sales WHERE id = ?', [id]);
     return result.affectedRows > 0;
   },
 
-  // Métodos anteriores para analiticas (mantener compatibilidad si se usan)
   getByBranchAndMonth: async (branchId, year, month) => {
     const [rows] = await pool.query(
       `SELECT s.*, p.name AS product_name, p.sku

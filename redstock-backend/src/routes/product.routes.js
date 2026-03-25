@@ -2,6 +2,7 @@ const { Router } = require('express');
 const router = Router();
 const { getAll, getById, create, update, remove } = require('../controllers/product.controller');
 const { verifyToken, isSuperAdmin } = require('../middlewares/auth.middleware');
+const { validateCreateProduct } = require('../middlewares/validate.middleware');
 
 // GET  /api/products
 router.get('/', verifyToken, getAll);
@@ -10,7 +11,7 @@ router.get('/', verifyToken, getAll);
 router.get('/:id', verifyToken, getById);
 
 // POST /api/products
-router.post('/', verifyToken, isSuperAdmin, create);
+router.post('/', verifyToken, isSuperAdmin, validateCreateProduct, create);
 
 // PUT  /api/products/:id
 router.put('/:id', verifyToken, isSuperAdmin, update);

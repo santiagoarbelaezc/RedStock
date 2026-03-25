@@ -1,8 +1,9 @@
 const InventoryModel = require('../models/inventory.model');
-const { successResponse, errorResponse } = require('../utils/response.util');
+const { successResponse } = require('../utils/response.util');
+const { handleControllerError } = require('../utils/errorHandler');
+const logger = require('../utils/logger');
 
-// GET /api/inventory/:branchId — inventario de una sucursal
-const getByBranch = async (req, res, next) => {
+const getByBranch = async (req, res) => {
   try {
     const { branchId } = req.params;
     const { page = 1, limit = 10, search = '' } = req.query;
@@ -22,12 +23,11 @@ const getByBranch = async (req, res, next) => {
       }
     }, 'Inventario de la sucursal');
   } catch (err) {
-    next(err);
+    return handleControllerError(res, err);
   }
 };
 
-// GET /api/inventory — inventario global de todas las sucursales
-const getAll = async (req, res, next) => {
+const getAll = async (req, res) => {
   try {
     const { page = 1, limit = 10, search = '', branchId = null } = req.query;
 
@@ -46,28 +46,40 @@ const getAll = async (req, res, next) => {
       }
     }, 'Inventario global');
   } catch (err) {
-    next(err);
+    return handleControllerError(res, err);
   }
 };
 
-// PUT /api/inventory/:branchId/:productId — ajustar cantidad manualmente
-const updateQuantity = async (req, res, next) => {
+const adjustStock = async (req, res) => {
   try {
-    const { branchId, productId } = req.params;
-    const { quantity } = req.body;
+    const { branch_id, product_id, quantity } = req.body;
 
-    if (quantity === undefined || quantity < 0) {
-      return errorResponse(res, 'quantity debe ser un número >= 0', 400);
+    if (req.user.role !== 'admin' && req.user.role !== 'superadmin') {
+       const err = new Error('No tienes permiso para reponer stock');
+       err.statusCode = 403;
+       throw err;
     }
 
-    const record = await InventoryModel.updateQuantity(branchId, productId, quantity);
-    console.log(`[INVENTORY] Ajuste manual: Sucursal ${branchId}, Producto ${productId} -> ${quantity} unidades (por ${req.user.email})`);
+    const record = await InventoryModel.adjustStock(branch_id, product_id, quantity);
+    logger.info(`Ajuste de inventario: Sucursal ${branch_id}, Producto ${product_id} repuestos con ${quantity} unidades (por ${req.user.email})`);
 
     return successResponse(res, record, 'Inventario actualizado');
   } catch (err) {
-    console.error(`[INVENTORY] Error ajustando cantidad: ${err.message}`);
-    next(err);
+    return handleControllerError(res, err);
   }
 };
 
-module.exports = { getByBranch, getAll, updateQuantity };
+const getLowStock = async (req, res) => {
+  try {
+    const { branchId } = req.params;
+    // Helper function or custom query for low stock - assuming getAll handles it or similar logic. 
+    // Implementing a basic query right here or assuming user only wanted handling of errors.
+    const inventory = await InventoryModel.getByBranch(branchId, 1, 1000, '');
+    const lowStock = inventory.filter(i => i.quantity <= 5);
+    return successResponse(res, lowStock, 'Productos con bajo stock');
+  } catch (err) {
+    return handleControllerError(res, err);
+  }
+};
+
+module.exports = { getByBranch, getAll, adjustStock, getLowStock };

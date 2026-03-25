@@ -18,6 +18,7 @@ const productRoutes   = require('./routes/product.routes');
 const saleRoutes      = require('./routes/sale.routes');
 const movementRoutes  = require('./routes/inventoryMovement.routes');
 const userRoutes      = require('./routes/user.routes');
+const testUiRoutes    = require('./routes/test-ui.routes'); // 🡨 Added test runner API
 
 const app = express();
 
@@ -42,6 +43,9 @@ app.get('/', (req, res) => {
   res.json({ message: 'RedStock API is running 🚀', version: '1.1.0' });
 });
 
+// Registro API Testing Visual Endpoint
+app.use('/api/test_api',  testUiRoutes);
+
 // Manejo de rutas no encontradas (404)
 app.use((req, res) => {
   res.status(404).json({ success: false, message: `Ruta no encontrada: ${req.originalUrl}` });
@@ -50,9 +54,13 @@ app.use((req, res) => {
 // Manejo global de errores
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
-});
+// En entorno de tests (supertest), el modulo se requiere y NO deberíamos iniciar el servidor
+// Esto permite que Jest maneje las conexiones independientemente y evita error "EADDRINUSE" en el port 3000
+if (process.env.NODE_ENV !== 'test') {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
+  });
+}
 
 module.exports = app;

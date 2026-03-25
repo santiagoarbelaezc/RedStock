@@ -1,9 +1,9 @@
 const SaleModel = require('../models/sale.model');
 const InventoryModel = require('../models/inventory.model');
-const { successResponse, errorResponse } = require('../utils/response.util');
+const { successResponse } = require('../utils/response.util');
+const { handleControllerError } = require('../utils/errorHandler');
 
 const SaleController = {
-  // GET /api/sales
   getAll: async (req, res) => {
     try {
       const { page = 1, limit = 10 } = req.query;
@@ -22,11 +22,10 @@ const SaleController = {
         }
       }, 'Ventas obtenidas correctamente');
     } catch (error) {
-      return errorResponse(res, error.message);
+      return handleControllerError(res, error);
     }
   },
 
-  // GET /api/sales/branch/:branchId
   getByBranch: async (req, res) => {
     try {
       const { branchId } = req.params;
@@ -47,75 +46,74 @@ const SaleController = {
         }
       }, `Ventas de la sucursal ${branchId} obtenidas`);
     } catch (error) {
-      return errorResponse(res, error.message);
+      return handleControllerError(res, error);
     }
   },
 
-  // GET /api/sales/:id
   getById: async (req, res) => {
     try {
       const { id } = req.params;
       const sale = await SaleModel.getById(id);
-      if (!sale) return errorResponse(res, 'Venta no encontrada', 404);
+      if (!sale) {
+        const err = new Error('Venta no encontrada');
+        err.statusCode = 404;
+        throw err;
+      }
       return successResponse(res, sale, 'Detalles de la venta obtenida');
     } catch (error) {
-      return errorResponse(res, error.message);
+      return handleControllerError(res, error);
     }
   },
 
-  // POST /api/sales
-  create: async (req, res) => {
+  createSale: async (req, res) => {
     try {
       const { branch_id, product_id, quantity, total, sale_date } = req.body;
 
-      // 1. Validaciones básicas
       if (!branch_id || !product_id || !quantity || !total) {
-        return errorResponse(res, 'Faltan campos obligatorios: branch_id, product_id, quantity, total', 400);
+        const err = new Error('Faltan campos obligatorios: branch_id, product_id, quantity, total');
+        err.statusCode = 400;
+        throw err;
       }
 
-      if (quantity <= 0) {
-        return errorResponse(res, 'La cantidad debe ser mayor a 0', 400);
-      }
-
-      // 2. Validar permisos (Superadmin accede a todo, admin solo a su sucursal)
       if (req.user.role !== 'superadmin' && req.user.role !== 'admin' && req.user.branch_id !== parseInt(branch_id)) {
-        return errorResponse(res, 'No tienes permiso para registrar ventas en esta sucursal', 403);
+        const err = new Error('No tienes permiso para registrar ventas en esta sucursal');
+        err.statusCode = 403;
+        throw err;
       }
 
-      // 3. Validar stock suficiente
-      const inv = await InventoryModel.getByBranchAndProduct(branch_id, product_id);
-      if (!inv || inv.quantity < quantity) {
-        return errorResponse(res, `Stock insuficiente en sucursal. Disponible: ${inv ? inv.quantity : 0}`, 400);
-      }
-
-      // 3. Crear venta
-      const newSale = await SaleModel.create(branch_id, product_id, quantity, total, sale_date);
+      const newSale = await SaleModel.createSale({ branch_id, product_id, quantity, total });
       return successResponse(res, newSale, 'Venta registrada exitosamente', 201);
     } catch (error) {
-      return errorResponse(res, error.message);
+      return handleControllerError(res, error);
     }
   },
 
-  // DELETE /api/sales/:id
   delete: async (req, res) => {
     try {
       const { id } = req.params;
-
-      // 1. Verificar existencia y permisos
       const sale = await SaleModel.getById(id);
-      if (!sale) return errorResponse(res, 'Venta no encontrada', 404);
-
-      if (req.user.role !== 'superadmin' && req.user.role !== 'admin' && req.user.branch_id !== sale.branch_id) {
-        return errorResponse(res, 'No tienes permiso para eliminar ventas de otra sucursal', 403);
+      if (!sale) {
+        const err = new Error('Venta no encontrada');
+        err.statusCode = 404;
+        throw err;
       }
 
-      // 2. Eliminar
+      if (req.user.role !== 'superadmin' && req.user.role !== 'admin' && req.user.branch_id !== sale.branch_id) {
+        const err = new Error('No tienes permiso para eliminar ventas de otra sucursal');
+        err.statusCode = 403;
+        throw err;
+      }
+
       const deleted = await SaleModel.delete(id);
-      if (!deleted) return errorResponse(res, 'No se pudo eliminar la venta', 500);
+      if (!deleted) {
+        const err = new Error('No se pudo eliminar la venta');
+        err.statusCode = 500;
+        throw err;
+      }
       
       return successResponse(res, null, 'Venta eliminada correctamente');
     } catch (error) {
-      return errorResponse(res, error.message);
+      return handleControllerError(res, error);
     }
   }
 };
